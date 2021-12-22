@@ -4,18 +4,30 @@ from .models import Vista
 from django.core.exceptions import FieldError
 
 def get_vista_object(view, queryset, model_name):
+    shown_fields=[]
     order_by = []
     filter_object={}
     new_queryset = None
 
     if 'query_submitted' in view.request.POST:
 
-        for i in range(0,3):
-            order_by_i = 'order_by_{}'.format(i)
-            if order_by_i in view.request.POST:
-                for field in view.order_by_fields:
-                    if view.request.POST.get(order_by_i) == field['name']:
-                        order_by.append(field['name'])
+        if 'shown_fields' in view.request.POST:
+            post_shown_fields = view.request.POST.getlist('shown_fields')
+
+            showable_fields = [ field['name'] for field in view.showable_fields ]
+            for shown_field in post_shown_fields:
+                if shown_field in showable_fields:
+                    print('tp lcmc08 shown_field')
+                    print(shown_field)
+
+                    shown_fields.append(shown_field)
+
+        if 'order_by' in view.request.POST:
+            post_order_by = view.request.POST.getlist('order_by')
+            order_by_fields = [ field['name'] for field in view.order_by_fields ]
+            for order_by_field in post_order_by:
+                if order_by_field in order_by_fields:
+                    order_by.append(order_by_field)
 
         for fieldname in view.filter_fields['in']:
             filterfieldname = 'filter__' + fieldname + '__in'
@@ -38,7 +50,7 @@ def get_vista_object(view, queryset, model_name):
             vista__name = view.request.POST.get('vista__name')
 
 
-        if filter_object or order_by:
+        if filter_object or order_by or shown_fields:
 
             vista, created = Vista.objects.get_or_create( user=view.request.user, model_name='libtekin.item', name=vista__name )
 
@@ -51,6 +63,13 @@ def get_vista_object(view, queryset, model_name):
                 view.order_by = order_by
                 vista.sortstring = ','.join(order_by)
                 queryset = queryset.order_by(*order_by)
+
+            if shown_fields:
+                view.shown_fields = shown_fields
+                vista.shown_fields = ','.join(shown_fields)
+                print('tp lcma51 shown fields')
+                print('shown_fields')
+
 
             vista.save()
             new_queryset = queryset
@@ -67,9 +86,13 @@ def get_vista_object(view, queryset, model_name):
         try:
             filter_object = json.loads(vista.filterstring)
             order_by = vista.sortstring.split(',')
+            shown_fields = vista.shown_fields.split(',')
             queryset = queryset.filter(**filter_object).order_by(*order_by)
 
             new_queryset = queryset
+            print('tp lcma52 shown fields')
+            print('shown_fields')
+
 
         except json.JSONDecodeError:
             pass
@@ -93,6 +116,7 @@ def get_vista_object(view, queryset, model_name):
         try:
             filter_object = json.loads(vista.filterstring)
             order_by = vista.sortstring.split(',')
+            shown_fields = vista.shown_fields.split(',')
             try:
                 queryset = queryset.filter(**filter_object).order_by(order_by)
                 new_queryset = queryset
@@ -108,5 +132,5 @@ def get_vista_object(view, queryset, model_name):
     if new_queryset is None:
         new_queryset = queryset
 
-    return {'queryset':new_queryset, 'filter_object':filter_object, 'order_by':order_by}
+    return {'queryset':new_queryset, 'filter_object':filter_object, 'order_by':order_by, 'shown_fields':shown_fields}
 

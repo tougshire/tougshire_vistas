@@ -35,7 +35,7 @@ class Vista(models.Model):
         blank=True,
         help_text='The sort string'
     )
-    fieldlist = models.CharField(
+    shown_fields = models.CharField(
         max_length=500,
         blank=True,
         help_text='The list of fields to show'
