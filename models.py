@@ -30,6 +30,10 @@ class Vista(models.Model):
         blank=True,
         help_text='The filter string'
     )
+    common_text_search = models.TextField(
+        blank=True,
+        help_text='The text to search on common text fields'
+    )
     sortstring = models.CharField(
         max_length=100,
         blank=True,
