@@ -11,6 +11,7 @@ def get_vista_object(view, queryset, model_name):
     filter_object={}
     qtext = None
     new_queryset = None
+    common_text_search=''
 
     def combine_q(text, common_text_fields):
         qtext = None
