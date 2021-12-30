@@ -46,20 +46,20 @@ def get_vista_object(view, queryset, model_name):
 
 
         for fieldname in view.filter_fields['in']:
-            filterfieldname = 'filter__' + fieldname + '__in'
-            if filterfieldname in view.request.POST and view.request.POST.get(filterfieldname) > '':
-                postfields = view.request.POST.getlist(filterfieldname)
-                fieldlist = []
-                for postfield in postfields:
-                    if postfield.isdecimal():
-                        fieldlist.append(postfield)
-                if fieldlist:
-                    filter_object[fieldname + '__in'] = postfields
-
             filterfieldnone = 'filter__' + fieldname + '__none'
             if filterfieldnone in view.request.POST:
+                print('tp lcua54 None in Post')
                 filter_object[fieldname] = None
-
+            else:
+                filterfieldname = 'filter__' + fieldname + '__in'
+                fieldlist = []
+                if filterfieldname in view.request.POST and view.request.POST.get(filterfieldname) > '':
+                    postfields = view.request.POST.getlist(filterfieldname)
+                    for postfield in postfields:
+                        if postfield.isdecimal():
+                            fieldlist.append(postfield)
+                    if fieldlist:
+                        filter_object[fieldname + '__in'] = postfields
 
         vista__name = ''
         if 'vista__name' in view.request.POST and view.request.POST.get('vista__name') > '':
@@ -74,11 +74,18 @@ def get_vista_object(view, queryset, model_name):
                 view.text_q = text_q
                 vista.combined_text_search=combined_text_search
                 queryset = queryset.filter(text_q)
+            else:
+                vista.combined_text_search=""
 
             if filter_object:
+                print('tp lcub48 filter object')
                 view.filter_object = filter_object
                 vista.filterstring = json.dumps( filter_object )
                 queryset = queryset.filter(**filter_object)
+            else:
+                print('tp lcuc25 no filter object')
+                view.filter_object = None
+                vista.filterstring = ''
 
             if order_by:
                 view.order_by = order_by
