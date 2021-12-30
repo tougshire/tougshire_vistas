@@ -4,24 +4,23 @@ from .models import Vista
 from django.core.exceptions import FieldError
 from django.db.models import Q
 
-
 def get_vista_object(view, queryset, model_name):
     shown_fields=[]
     order_by = []
     filter_object={}
-    qtext = None
+    text_q = None
     new_queryset = None
-    common_text_search=''
+    combined_text_search=''
 
     def combine_q(text, common_text_fields):
-        qtext = None
+        text_q = None
         for fieldname in common_text_fields:
-            if qtext is None:
-                qtext = Q(**{fieldname + '__contains':text})
+            if text_q is None:
+                text_q = Q(**{fieldname + '__contains':text})
             else:
-                qtext = qtext | Q(**{fieldname + '__contains':text})
+                text_q = text_q | Q(**{fieldname + '__contains':text})
 
-        return qtext
+        return text_q
 
     if 'query_submitted' in view.request.POST:
 
@@ -40,10 +39,10 @@ def get_vista_object(view, queryset, model_name):
                 if order_by_field in order_by_fields:
                     order_by.append(order_by_field)
 
-        if 'common_text_search' in view.request.POST:
-            common_text_search = view.request.POST.get('common_text_search')
-            view.common_text_search = common_text_search
-            qtext = combine_q(common_text_search, view.common_text_fields)
+        if 'combined_text_search' in view.request.POST:
+            combined_text_search = view.request.POST.get('combined_text_search')
+            view.combined_text_search = combined_text_search
+            text_q = combine_q(combined_text_search, view.common_text_fields)
 
 
         for fieldname in view.filter_fields['in']:
@@ -67,14 +66,14 @@ def get_vista_object(view, queryset, model_name):
             vista__name = view.request.POST.get('vista__name')
 
 
-        if qtext or filter_object or order_by or shown_fields:
+        if text_q or filter_object or order_by or shown_fields:
 
             vista, created = Vista.objects.get_or_create( user=view.request.user, model_name='libtekin.item', name=vista__name )
 
-            if qtext is not None:
-                view.qtext = qtext
-                vista.common_text_search=common_text_search
-                queryset = queryset.filter(qtext)
+            if text_q is not None:
+                view.text_q = text_q
+                vista.combined_text_search=combined_text_search
+                queryset = queryset.filter(text_q)
 
             if filter_object:
                 view.filter_object = filter_object
@@ -104,15 +103,16 @@ def get_vista_object(view, queryset, model_name):
 
         try:
             filter_object = json.loads(vista.filterstring)
-            common_text_search = vista.common_text_search
-            qtext = combine_q(common_text_search, view.common_text_fields)
+            combined_text_search = vista.combined_text_search
+            text_q = combine_q(combined_text_search, view.common_text_fields)
             order_by = vista.sortstring.split(',')
             shown_fields = vista.shown_fields.split(',')
-            queryset = queryset.filter(qtext).filter(**filter_object).order_by(*order_by)
+            queryset = queryset.filter(text_q).filter(**filter_object).order_by(*order_by)
 
             new_queryset = queryset
 
         except json.JSONDecodeError:
+            print('JSONDecodeError')
             pass
 
         except (ValueError, TypeError, FieldError):
@@ -136,12 +136,12 @@ def get_vista_object(view, queryset, model_name):
 
         try:
             filter_object = json.loads(vista.filterstring)
-            common_text_search = vista.common_text_search
-            qtext = combine_q(common_text_search, view.common_text_fields)
+            combined_text_search = vista.combined_text_search
+            text_q = combine_q(combined_text_search, view.common_text_fields)
             order_by = vista.sortstring.split(',')
             shown_fields = vista.shown_fields.split(',')
             try:
-                queryset = queryset.filter(qtext).filter(**filter_object).order_by(order_by)
+                queryset = queryset.filter(text_q).filter(**filter_object).order_by(order_by)
                 new_queryset = queryset
 
             except (ValueError, TypeError, FieldError):
@@ -155,5 +155,5 @@ def get_vista_object(view, queryset, model_name):
     if new_queryset is None:
         new_queryset = queryset
 
-    return {'queryset':new_queryset, 'common_text_search':common_text_search, 'filter_object':filter_object, 'order_by':order_by, 'shown_fields':shown_fields}
+    return {'queryset':new_queryset, 'combined_text_search':combined_text_search, 'filter_object':filter_object, 'order_by':order_by, 'shown_fields':shown_fields}
 

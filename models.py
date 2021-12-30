@@ -30,7 +30,7 @@ class Vista(models.Model):
         blank=True,
         help_text='The filter string'
     )
-    common_text_search = models.TextField(
+    combined_text_search = models.TextField(
         blank=True,
         help_text='The text to search on common text fields'
     )
