@@ -44,21 +44,34 @@ def get_vista_object(view, queryset, model_name):
             view.combined_text_search = combined_text_search
             text_q = combine_q(combined_text_search, view.combined_text_fields)
 
-        for fieldname in view.filter_fields['in']:
-            filterfieldnone = 'filter__' + fieldname + '__none'
-            if filterfieldnone in view.request.POST:
-                print('tp lcua54 None in Post')
-                filter_object[fieldname] = None
-            else:
-                filterfieldname = 'filter__' + fieldname + '__in'
-                fieldlist = []
-                if filterfieldname in view.request.POST and view.request.POST.get(filterfieldname) > '':
-                    postfields = view.request.POST.getlist(filterfieldname)
-                    for postfield in postfields:
-                        if postfield.isdecimal():
-                            fieldlist.append(postfield)
-                    if fieldlist:
-                        filter_object[fieldname + '__in'] = postfields
+
+        if('exact' in view.filter_fields):
+            for fieldname in view.filter_fields['exact']:
+                filterfieldnone = 'filter__' + fieldname + '__none'
+                if filterfieldnone in view.request.POST:
+                    filter_object[fieldname] = None
+                else:
+                    filterfieldname = 'filter__' + fieldname + '__exact'
+                    fieldlist = []
+                    if filterfieldname in view.request.POST and view.request.POST.get(filterfieldname) > '':
+                        filter_object[fieldname + '__exact'] = view.request.POST.get(filterfieldname)
+
+        if('in' in view.filter_fields):
+            for fieldname in view.filter_fields['in']:
+                filterfieldnone = 'filter__' + fieldname + '__none'
+                if filterfieldnone in view.request.POST:
+                    print('tp lcua54 None in Post')
+                    filter_object[fieldname] = None
+                else:
+                    filterfieldname = 'filter__' + fieldname + '__in'
+                    fieldlist = []
+                    if filterfieldname in view.request.POST and view.request.POST.get(filterfieldname) > '':
+                        postfields = view.request.POST.getlist(filterfieldname)
+                        for postfield in postfields:
+                            if postfield.isdecimal():
+                                fieldlist.append(postfield)
+                        if fieldlist:
+                            filter_object[fieldname + '__in'] = postfields
 
         vista__name = ''
         if 'vista__name' in view.request.POST and view.request.POST.get('vista__name') > '':
