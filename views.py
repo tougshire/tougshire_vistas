@@ -44,7 +44,6 @@ def get_vista_object(view, queryset, model_name):
             view.combined_text_search = combined_text_search
             text_q = combine_q(combined_text_search, view.combined_text_fields)
 
-
         if('exact' in view.filter_fields):
             for fieldname in view.filter_fields['exact']:
                 filterfieldnone = 'filter__' + fieldname + '__none'
@@ -56,11 +55,21 @@ def get_vista_object(view, queryset, model_name):
                     if filterfieldname in view.request.POST and view.request.POST.get(filterfieldname) > '':
                         filter_object[fieldname + '__exact'] = view.request.POST.get(filterfieldname)
 
+        if('lt' in view.filter_fields):
+            for fieldname in view.filter_fields['lt']:
+                filterfieldnone = 'filter__' + fieldname + '__none'
+                if filterfieldnone in view.request.POST:
+                    filter_object[fieldname] = None
+                else:
+                    filterfieldname = 'filter__' + fieldname + '__lt'
+                    fieldlist = []
+                    if filterfieldname in view.request.POST and view.request.POST.get(filterfieldname) > '':
+                        filter_object[fieldname + '__lt'] = view.request.POST.get(filterfieldname)
+
         if('in' in view.filter_fields):
             for fieldname in view.filter_fields['in']:
                 filterfieldnone = 'filter__' + fieldname + '__none'
                 if filterfieldnone in view.request.POST:
-                    print('tp lcua54 None in Post')
                     filter_object[fieldname] = None
                 else:
                     filterfieldname = 'filter__' + fieldname + '__in'
