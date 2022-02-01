@@ -34,6 +34,10 @@ class Vista(models.Model):
         blank=True,
         help_text='The text to search on common text fields'
     )
+    combined_text_fields = models.TextField(
+        blank=True,
+        help_text='The list of fields to use for the combined_text_search'
+    )
     sortstring = models.CharField(
         max_length=100,
         blank=True,

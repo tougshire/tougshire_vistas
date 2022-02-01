@@ -1,189 +1,322 @@
+import datetime
 import json
-from django.shortcuts import render
-from .models import Vista
+from tkinter import W
+
+from django.contrib import messages
 from django.core.exceptions import FieldError
 from django.db.models import Q
+from django.http import QueryDict
+from django.shortcuts import render
 
-def get_vista_object(view, queryset, model_name):
-    combined_text_search=''
-    filter_object={}
-    new_queryset = None
-    order_by = []
-    show_columns=[]
-    text_q = None
+from .models import Vista
 
-    def combine_q(text, combined_text_fields):
-        text_q = None
+
+def make_vista(request, settings, queryset, retrieved_vista=None):
+
+    saveobj = {
+        'filter':{},
+        'combined_text_search':'',
+        'combined_text_fields':[],
+        'order_by':[],
+    }
+
+    def make_text_query(combined_text_search, combined_text_fields):
+        text_query = None
         for fieldname in combined_text_fields:
-            if text_q is None:
-                text_q = Q(**{fieldname + '__contains':text})
+            if text_query is not None:
+                text_query = text_query | Q(**{fieldname + '__contains':combined_text_search})
             else:
-                text_q = text_q | Q(**{fieldname + '__contains':text})
+                text_query = Q(**{fieldname + '__contains':combined_text_search})
 
-        return text_q
+        return text_query
 
-    if 'query_submitted' in view.request.POST:
+    def in_both(list_a,list_b):
+        return list(set(list_a).intersection(set(list_b)))
 
-        if 'show_columns' in view.request.POST:
-            post_show_columns = view.request.POST.getlist('show_columns')
+    def save_vista(request, saveobj, model_name, resave=False):
 
-            showable_fields = [ field['name'] for field in view.showable_fields ]
-            for show_column in post_show_columns:
-                if show_column in showable_fields:
-                    show_columns.append(show_column)
-
-        if 'order_by' in view.request.POST:
-            post_order_by = view.request.POST.getlist('order_by')
-            order_by_fields = [ field['name'] for field in view.order_by_fields ]
-            for order_by_field in post_order_by:
-                if order_by_field in order_by_fields:
-                    order_by.append(order_by_field)
-
-        if 'combined_text_search' in view.request.POST:
-            combined_text_search = view.request.POST.get('combined_text_search')
-            view.combined_text_search = combined_text_search
-            text_q = combine_q(combined_text_search, view.combined_text_fields)
-
-        # if('exact' in view.filter_fields):
-        #     for fieldname in view.filter_fields['exact']:
-        #         filterfieldnone = 'filter__' + fieldname + '__none'
-        #         if filterfieldnone in view.request.POST:
-        #             filter_object[fieldname] = None
-        #         else:
-        #             filterfieldname = 'filter__' + fieldname + '__exact'
-        #             fieldlist = []
-        #             if filterfieldname in view.request.POST and view.request.POST.get(filterfieldname) > '':
-        #                 filter_object[fieldname + '__exact'] = view.request.POST.get(filterfieldname)
-
-        for compr in ['exact', 'lt','gt','lte','gte']:
-            if(compr in view.filter_fields):
-                for fieldname in view.filter_fields[compr]:
-                    filterfieldnone = 'filter__' + fieldname + '__none'
-                    if filterfieldnone in view.request.POST:
-                        filter_object[fieldname] = None
-                    else:
-                        filterfieldname = 'filter__' + fieldname + '__' + compr
-                        fieldlist = []
-                        if filterfieldname in view.request.POST and view.request.POST.get(filterfieldname) > '':
-                            filter_object[fieldname + '__'+ compr] = view.request.POST.get(filterfieldname)
-
-        if('in' in view.filter_fields):
-            for fieldname in view.filter_fields['in']:
-                filterfieldnone = 'filter__' + fieldname + '__none'
-                if filterfieldnone in view.request.POST:
-                    filter_object[fieldname] = None
-                else:
-                    filterfieldname = 'filter__' + fieldname + '__in'
-                    fieldlist = []
-                    if filterfieldname in view.request.POST and view.request.POST.get(filterfieldname) > '':
-                        postfields = view.request.POST.getlist(filterfieldname)
-                        for postfield in postfields:
-                            if postfield.isdecimal():
-                                fieldlist.append(postfield)
-                        if fieldlist:
-                            filter_object[fieldname + '__in'] = postfields
-
-        vista__name = ''
-        if 'vista__name' in view.request.POST and view.request.POST.get('vista__name') > '':
-            vista__name = view.request.POST.get('vista__name')
-
-        if text_q or filter_object or order_by or show_columns:
-
-            vista, created = Vista.objects.get_or_create( user=view.request.user, model_name=model_name, name=vista__name )
-
-            if text_q is not None:
-                view.text_q = text_q
-                vista.combined_text_search=combined_text_search
-                queryset = queryset.filter(text_q)
-            else:
-                vista.combined_text_search=""
-
-            if filter_object:
-                view.filter_object = filter_object
-                vista.filterstring = json.dumps( filter_object )
-                queryset = queryset.filter(**filter_object)
-            else:
-                view.filter_object = None
-                vista.filterstring = ''
-
-            if order_by:
-                view.order_by = order_by
-                vista.sortstring = ','.join(order_by)
-                queryset = queryset.order_by(*order_by)
-            else:
-                order_by = ""
-
-            if show_columns:
-                view.show_columns = show_columns
-                vista.show_columns = ','.join(show_columns)
-            else:
-                show_columns = ""
-
-            vista.save()
-            new_queryset = queryset
-
-    elif 'get_vista' in view.request.POST:
-
-        vista__name = ''
-
-        if 'vista__name' in view.request.POST and view.request.POST.get('vista__name') > '':
-            vista__name = view.request.POST.get('vista__name')
-
-        vista, created = Vista.objects.get_or_create( user=view.request.user, model_name=model_name, name=vista__name )
+        vista__name = local_post.get('vista__name') if 'vista__name' in local_post else ''
 
         try:
-            filter_object = json.loads(vista.filterstring)
-            combined_text_search = vista.combined_text_search
-            text_q = combine_q(combined_text_search, view.combined_text_fields)
-            order_by = vista.sortstring.split(',')
-            show_columns = vista.show_columns.split(',')
-            queryset = queryset.filter(text_q).filter(**filter_object).order_by(*order_by)
+            vista, created = Vista.objects.get_or_create(name=vista__name, user=request.user)
+        except Vista.MultipleObjectsReturned:
+            vista = Vista.objects.filter(name=vista__name, user=request.user)[0]
+            Vista.objects.filter(name=vista__name, user=request.user).exclude(pk=vista.pk).delete()
 
-            new_queryset = queryset
+        vista.modified = datetime.date.today()
 
-        except json.JSONDecodeError:
-            print('JSONDecodeError')
-            pass
+        if not resave:
 
-        except (ValueError, TypeError, FieldError):
-            print('Field/Value/Type Error')
+            vista.is_default = True if local_post.get('is_default') else False
 
-    elif 'delete_vista' in view.request.POST:
-        vista__name = ''
+            vista.combined_text_search = saveobj['combined_text_search']
+            vista.combined_text_fields = ','.join(saveobj['combined_text_fields'])
+            vista.sort_string = ','.join(saveobj['order_by'])
+            for key in saveobj['filter']:
+                if type(saveobj['filter'][key]) != str:
+                    for typename in [
+                        'datetime',
+                        'time'
+                    ]:
+                        if type(saveobj['filter'][key]).__name__ == typename:
+                            saveobj['filter'][key] = str(saveobj['filter'][key])
+            vista.filterstring = json.dumps(saveobj['filter'])
 
-        if 'vista__name' in view.request.POST and view.request.POST.get('vista__name') > '':
+            vista.model_name = model_name
 
-            vista__name = view.request.POST.get('vista__name')
-            Vista.objects.filter( user=view.request.user, model_name=model_name, name=vista__name ).delete()
+        vista.save()
+
+    print('tp m21d39')
+    print(request.POST.getlist('filterop__item'))
+    local_post = request.POST.copy()
+    print(local_post.getlist('filterop__item'))
+
+    if retrieved_vista is not None:
+        local_post['combined_text_search'] = retrieved_vista.combined_text_search
+        if retrieved_vista.filterstring > '':
+            retrieved_filter = json.loads(retrieved_vista.filterstring)
+            for key in retrieved_filter:
+                local_post.setlist(key,retrieved_filter[key])
+
+    if 'combined_text_search' in local_post and local_post.get('combined_text_search') and 'text_fields_available' in settings:
+        saveobj['combined_text_search'] = local_post.get('combined_text_search')
+        saveobj['combined_text_fields'] = settings['text_fields_available']
+        if 'combined_text_fields' in local_post and local_post.get('combined_text_fields'):
+            saveobj['combined_text_fields'] = in_both(settings['text_fields_available'], local_post.get('combined_text_fields'))
+        else:
+            saveobj['combined_text_fields'] = settings['text_fields_available']
 
 
-    # this code runs if no queryset has been returned yet
-        vista = Vista.objects.filter( user=view.request.user, model_name=model_name, is_default=True ).last()
-        if vista is None:
-            vista = Vista.objects.filter( user=view.request.user, model_name=model_name ).last()
-        if vista is None:
-            vista, created = Vista.objects.get_or_create( user=view.request.user, model_name=model_name )
+        textquery = make_text_query(saveobj['combined_text_search'], saveobj['combined_text_fields'])
+        queryset = queryset.filter(textquery)
 
+    if 'filter_fields_available' in settings:
+        filterobj = {}
+        for fieldname in settings['filter_fields_available']:
+
+            if 'filterop__' + fieldname in local_post and local_post.getlist('filterop__' + fieldname):
+
+                opers = local_post.getlist('filterop__' + fieldname )
+                print('tp m21c57 opers by fieldname')
+                print(fieldname)
+                print(opers)
+                saveobj['filter']['filterop__' + fieldname] = opers[:]
+                print(saveobj['filter']['filterop__' + fieldname])
+
+                # the isnull operator doesn't require that there be any field values
+                if 'isnull' in opers:
+                    opers.remove('isnull')
+                    filterobj[fieldname + '__isnull'] = True
+
+                # opers that require values
+
+                if 'filterfield__' + fieldname in local_post and local_post.get('filterfield__' + fieldname):
+                    values = local_post.getlist('filterfield__' + fieldname)
+                    saveobj['filter']['filterfield__' + fieldname] = values
+
+                    for f in range(len(opers)):
+
+                        if opers[f] == 'in':
+                            filterobj[fieldname + '__in'] = values
+
+                        if values[f]:
+
+                            for opname in [
+                                'exact',
+                                'iexact',
+                                'contains',
+                                'icontains',
+                                'lt',
+                                'gt',
+                                'lte',
+                                'gte',
+                                'startswith',
+                                'istartswith',
+                                'endswith',
+                                'iendswith',
+                                ]:
+                                if opers[f] == opname:
+                                    filterobj[fieldname + '__' + opname] = values[f]
+
+                            if opers[f] == 'date':
+                                try:
+                                    filterobj[fieldname + '__date'] = datetime.datetime.fromisoformat(values[f])
+                                except ValueError:
+                                    pass
+
+                            for opchain in [
+                                'lt',
+                                'gt',
+                                'lte',
+                                'gte',
+                            ]:
+                                if opers[f] == 'date__' + opchain:
+                                    try:
+                                        filterobj[fieldname + '__date__' + opchain] = datetime.datetime.fromisoformat(values[f])
+                                    except ValueError:
+                                        pass
+
+                            if opers[f] == 'time':
+                                try:
+                                    filterobj[fieldname + '__time'] = datetime.time.fromisoformat(values[f])
+                                except ValueError:
+                                    pass
+
+                            for opchain in [
+                                'lt',
+                                'gt',
+                                'lte',
+                                'gte',
+                            ]:
+                                if opers[f] == 'time__' + opchain:
+                                    try:
+                                        filterobj[fieldname + '__time__' + opchain] = datetime.time.fromisoformat(values[f])
+                                    except ValueError:
+                                        pass
+
+                            for opname in [
+                                'year',
+                                'iso_year',
+                                'month',
+                                'day',
+                                'week',
+                                'week_day',
+                                'iso_week_day',
+                                'hour',
+                                'minute',
+                                'second',
+                                'quarter',
+                            ]:
+                                if opers[f] == opname:
+                                    try:
+                                        filterobj[fieldname + '__' + opname] = int(values[f])
+                                    except ValueError:
+                                        pass
+
+                                for opchain in [
+                                    'lt',
+                                    'gt',
+                                    'lte',
+                                    'gte',
+                                ]:
+                                    if opers[f] == opname + '__' + opchain:
+                                        try:
+                                            filterobj[fieldname + '__time__' + opchain] = int(values[f])
+                                        except ValueError:
+                                            pass
+
+                            for opname in ['regex', 'iregex']:
+                                if opers[f] == opname:
+                                    filterobj[fieldname + '__' + opname] = values[f]
+
+                        if opers[f] == 'range':
+                            try:
+                                filterobj[fieldname + '__range'] = [ datetime.datetime.fromisoformat(values[0]), datetime.datetime.fromisoformat(values[-1]) ]
+                            except ValueError:
+                                try:
+                                    filterobj[fieldname + '__gte'] = datetime.datetime.fromisoformat(values[0])
+                                except ValueError:
+                                    pass
+                                try:
+                                    filterobj[fieldname + '__lte'] = datetime.datetime.fromisoformat(values[-1])
+                                except ValueError:
+                                    pass
+
+                        if opers[f] == 'time__range':
+                            try:
+                                filterobj[fieldname + '__range'] = [ datetime.time.fromisoformat(values[0]), datetime.time.fromisoformat(values[-1]) ]
+                            except ValueError:
+                                try:
+                                    filterobj[fieldname + '__gte'] = datetime.time.fromisoformat(values[0])
+                                except ValueError:
+                                    pass
+                                try:
+                                    filterobj[fieldname + '__lte'] = datetime.time.fromisoformat(values[-1])
+                                except ValueError:
+                                    pass
+
+    if filterobj:
         try:
-            filter_object = json.loads(vista.filterstring)
-            combined_text_search = vista.combined_text_search
-            text_q = combine_q(combined_text_search, view.combined_text_fields)
-            order_by = vista.sortstring.split(',')
-            show_columns = vista.show_columns.split(',')
-            try:
-                queryset = queryset.filter(text_q).filter(**filter_object).order_by(order_by)
-                new_queryset = queryset
+            queryset = queryset.filter(**filterobj)
+        except FieldError as e:
+            print(saveobj['filter']['filter'])
+            print(e)
+            messages.add_message(request, messages.WARNING, 'There was an error running the query.  Results might not be correctly filtered')
+            messages.add_message(request, messages.WARNING, e)
+        except ValueError as e:
+            print(saveobj['filter']['filter'])
+            print(e)
+            messages.add_message(request, messages.WARNING, 'There was an error running the query.  Results might not be correctly filtered')
+            messages.add_message(request, messages.WARNING, e)
 
-            except (ValueError, TypeError, FieldError):
-                print('Field/Value/Type Error')
-                vista.delete()
+    if retrieved_vista is None:
+        save_vista(request, saveobj, queryset.model._meta.label_lower)
+    else:
+        save_vista(request, saveobj, queryset.model._meta.label_lower,resave=True)
 
-        except json.JSONDecodeError:
-            print('deserialization error')
-            vista.delete()
+    return {'context': saveobj, 'queryset':queryset}
 
-    if new_queryset is None:
-        new_queryset = queryset
+def retrieve_vista(request, settings, queryset):
 
-    return {'queryset':new_queryset, 'combined_text_search':combined_text_search, 'filter_object':filter_object, 'order_by':order_by, 'show_columns':show_columns}
+    vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
+    vista, created = Vista.objects.get_or_create(name=vista__name, user=request.user)
+
+    return make_vista(request, settings, queryset, vista)
+
+def retrieve_vista_m21b37(request, settings, queryset):
+
+    vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
+    vista, created = Vista.objects.get_or_create(name=vista__name, user=request.user)
+
+    contextobj = {}
+
+    queryobj = {
+        'text':'',
+        'filter':{},
+    }
+
+    def make_text_query(combined_text_search, combined_text_fields):
+        text_query = None
+
+        for fieldname in combined_text_fields:
+            if text_query is not None:
+                text_query = text_query | Q(**{fieldname + '__contains':combined_text_search})
+            else:
+                text_query = Q(**{fieldname + '__contains':combined_text_search})
+
+        return text_query
+
+    def in_both(list_a,list_b):
+        return list(set(list_a).intersection(set(list_b)))
+
+    if vista.combined_text_search > '' and 'text_fields_available' in settings:
+
+        contextobj['combined_text_search'] = vista.combined_text_search
+        combined_text_fields = settings['text_fields_available']
+
+        if vista.combined_text_fields > '':
+            combined_text_fields = in_both(vista.combined_text_fields.split(','), combined_text_fields)
+        contextobj['combined_text_fields'] = combined_text_fields
+
+        queryobj['text'] = make_text_query(contextobj['combined_text_search'], combined_text_fields)
+
+        if str(queryobj['text']) > '':
+            queryset = queryset.filter(queryobj['text'])
+
+    filterobj = None
+    try:
+        filterobj = json.loads(vista.filterstring)
+        queryset = queryset.filter(**filterobj)
+        contextobj['filter'] = {}
+        for key in filterobj:
+            contextobj['filter'][key]=filterobj[key]
+
+    except json.JSONDecodeError:
+        print('JSONDecodeError')
+
+    vista.modified = datetime.date.today()
+    vista.save()
+
+    return {'context':contextobj, 'queryset':queryset}
+
 
