@@ -1,6 +1,5 @@
 import datetime
 import json
-from tkinter import W
 
 from django.contrib import messages
 from django.core.exceptions import FieldError
