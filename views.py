@@ -12,6 +12,9 @@ from .models import Vista
 
 def make_vista(request, settings, queryset, retrieved_vista=None):
 
+    print('tp m23630')
+    print(retrieved_vista)
+
     saveobj = {
         'filter':{},
         'combined_text_search':'',
@@ -65,10 +68,7 @@ def make_vista(request, settings, queryset, retrieved_vista=None):
 
         vista.save()
 
-    print('tp m21d39')
-    print(request.POST.getlist('filterop__item'))
     local_post = request.POST.copy()
-    print(local_post.getlist('filterop__item'))
 
     if retrieved_vista is not None:
         local_post['combined_text_search'] = retrieved_vista.combined_text_search
@@ -96,11 +96,7 @@ def make_vista(request, settings, queryset, retrieved_vista=None):
             if 'filterop__' + fieldname in local_post and local_post.getlist('filterop__' + fieldname):
 
                 opers = local_post.getlist('filterop__' + fieldname )
-                print('tp m21c57 opers by fieldname')
-                print(fieldname)
-                print(opers)
                 saveobj['filter']['filterop__' + fieldname] = opers[:]
-                print(saveobj['filter']['filterop__' + fieldname])
 
                 # the isnull operator doesn't require that there be any field values
                 if 'isnull' in opers:
@@ -248,18 +244,11 @@ def make_vista(request, settings, queryset, retrieved_vista=None):
             messages.add_message(request, messages.WARNING, 'There was an error running the query.  Results might not be correctly filtered')
             messages.add_message(request, messages.WARNING, e)
 
-    if 'order_by_fields_available' in settings:
-        order_by_fields_available = [field['name'] for field in settings['order_by_fields_available']]
-        print('tp m22j10')
-        print(order_by_fields_available)
-        if 'order_by' in local_post and local_post.getlist('order_by'):
-            order_by = []
-            for field in local_post.getlist('order_by'):
-                print(field)
-                if field in order_by_fields_available:
-                    order_by.append(field)
-        queryset = queryset.order_by(*order_by)
-
+    order_by = queryset.model._meta.ordering
+    if 'order_by_fields_available' in settings and 'order_by' in local_post and local_post.getlist('order_by'):
+        order_by = [fieldname for fieldname in local_post.getlist('order_by') if fieldname in settings['order_by_fields_available']]
+    saveobj['order_by'] = order_by
+    queryset = queryset.order_by(*order_by)
 
     if retrieved_vista is None:
         save_vista(request, saveobj, queryset.model._meta.label_lower)
@@ -270,10 +259,12 @@ def make_vista(request, settings, queryset, retrieved_vista=None):
 
 # call this function in a try/except block to catch DoesNotExist.
 def retrieve_vista(request, settings, queryset):
+    print('tp m23625')
 
     vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
+    print(vista__name)
     vista = Vista.objects.filter(name=vista__name, user=request.user).latest('modified')
-
+    print(vista)
     return make_vista(request, settings, queryset, vista)
 
 # call this function in a try/except block to catch DoesNotExist.
@@ -283,6 +274,8 @@ def get_latest_vista(request, settings, queryset):
 
     return make_vista(request, settings, queryset, vista)
 
+# does not return anything.  Most likely you'll want to call get_latest_vista after calling this
+def delete_vista(request):
 
-
-
+    vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
+    vista = Vista.objects.filter(name=vista__name, user=request.user).delete()
