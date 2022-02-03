@@ -248,6 +248,19 @@ def make_vista(request, settings, queryset, retrieved_vista=None):
             messages.add_message(request, messages.WARNING, 'There was an error running the query.  Results might not be correctly filtered')
             messages.add_message(request, messages.WARNING, e)
 
+    if 'order_by_fields_available' in settings:
+        order_by_fields_available = [field['name'] for field in settings['order_by_fields_available']]
+        print('tp m22j10')
+        print(order_by_fields_available)
+        if 'order_by' in local_post and local_post.getlist('order_by'):
+            order_by = []
+            for field in local_post.getlist('order_by'):
+                print(field)
+                if field in order_by_fields_available:
+                    order_by.append(field)
+        queryset = queryset.order_by(*order_by)
+
+
     if retrieved_vista is None:
         save_vista(request, saveobj, queryset.model._meta.label_lower)
     else:
@@ -255,67 +268,21 @@ def make_vista(request, settings, queryset, retrieved_vista=None):
 
     return {'context': saveobj, 'queryset':queryset}
 
+# call this function in a try/except block to catch DoesNotExist.
 def retrieve_vista(request, settings, queryset):
 
     vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
-    vista, created = Vista.objects.get_or_create(name=vista__name, user=request.user)
+    vista = Vista.objects.filter(name=vista__name, user=request.user).latest('modified')
 
     return make_vista(request, settings, queryset, vista)
 
-def retrieve_vista_m21b37(request, settings, queryset):
+# call this function in a try/except block to catch DoesNotExist.
+def get_latest_vista(request, settings, queryset):
 
-    vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
-    vista, created = Vista.objects.get_or_create(name=vista__name, user=request.user)
+    vista = Vista.objects.filter(user=request.user).latest('modified')
 
-    contextobj = {}
+    return make_vista(request, settings, queryset, vista)
 
-    queryobj = {
-        'text':'',
-        'filter':{},
-    }
 
-    def make_text_query(combined_text_search, combined_text_fields):
-        text_query = None
-
-        for fieldname in combined_text_fields:
-            if text_query is not None:
-                text_query = text_query | Q(**{fieldname + '__contains':combined_text_search})
-            else:
-                text_query = Q(**{fieldname + '__contains':combined_text_search})
-
-        return text_query
-
-    def in_both(list_a,list_b):
-        return list(set(list_a).intersection(set(list_b)))
-
-    if vista.combined_text_search > '' and 'text_fields_available' in settings:
-
-        contextobj['combined_text_search'] = vista.combined_text_search
-        combined_text_fields = settings['text_fields_available']
-
-        if vista.combined_text_fields > '':
-            combined_text_fields = in_both(vista.combined_text_fields.split(','), combined_text_fields)
-        contextobj['combined_text_fields'] = combined_text_fields
-
-        queryobj['text'] = make_text_query(contextobj['combined_text_search'], combined_text_fields)
-
-        if str(queryobj['text']) > '':
-            queryset = queryset.filter(queryobj['text'])
-
-    filterobj = None
-    try:
-        filterobj = json.loads(vista.filterstring)
-        queryset = queryset.filter(**filterobj)
-        contextobj['filter'] = {}
-        for key in filterobj:
-            contextobj['filter'][key]=filterobj[key]
-
-    except json.JSONDecodeError:
-        print('JSONDecodeError')
-
-    vista.modified = datetime.date.today()
-    vista.save()
-
-    return {'context':contextobj, 'queryset':queryset}
 
 
