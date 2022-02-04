@@ -10,10 +10,7 @@ from django.shortcuts import render
 from .models import Vista
 
 
-def make_vista(request, settings, queryset, retrieved_vista=None):
-
-    print('tp m23630')
-    print(retrieved_vista)
+def make_vista(request, settings, queryset, defaults={}, retrieved_vista=None ):
 
     saveobj = {
         'filter':{},
@@ -21,6 +18,10 @@ def make_vista(request, settings, queryset, retrieved_vista=None):
         'combined_text_fields':[],
         'order_by':[],
     }
+    for key in defaults:
+        saveobj[key] = defaults[key]
+
+    print('tp m24b31', saveobj)
 
     def make_text_query(combined_text_search, combined_text_fields):
         text_query = None
@@ -250,6 +251,9 @@ def make_vista(request, settings, queryset, retrieved_vista=None):
     saveobj['order_by'] = order_by
     queryset = queryset.order_by(*order_by)
 
+    if 'paginate_by' in local_post and local_post.get('paginate_by'):
+        saveobj['paginate_by'] = local_post.get('paginate_by')
+
     if retrieved_vista is None:
         save_vista(request, saveobj, queryset.model._meta.label_lower)
     else:
@@ -258,21 +262,26 @@ def make_vista(request, settings, queryset, retrieved_vista=None):
     return {'context': saveobj, 'queryset':queryset}
 
 # call this function in a try/except block to catch DoesNotExist.
-def retrieve_vista(request, settings, queryset):
+def retrieve_vista(request, settings, queryset, defaults):
     print('tp m23625')
 
     vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
     print(vista__name)
     vista = Vista.objects.filter(name=vista__name, user=request.user).latest('modified')
     print(vista)
-    return make_vista(request, settings, queryset, vista)
+    return make_vista(request, settings, queryset, defaults, vista)
 
 # call this function in a try/except block to catch DoesNotExist.
-def get_latest_vista(request, settings, queryset):
+def get_latest_vista(request, settings, queryset, defaults):
 
     vista = Vista.objects.filter(user=request.user).latest('modified')
 
-    return make_vista(request, settings, queryset, vista)
+    return make_vista(request, settings, queryset, defaults, vista)
+
+def get_global_vista(request, settings, queryset, defaults):
+
+    vista = Vista.objects.filter(is_global_default=True).latest('modified')
+    return make_vista(request, settings, queryset, defaults, vista)
 
 # does not return anything.  Most likely you'll want to call get_latest_vista after calling this
 def delete_vista(request):
