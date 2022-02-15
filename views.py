@@ -9,7 +9,6 @@ from django.shortcuts import render
 
 from .models import Vista
 
-
 def make_vista(request, settings, queryset, defaults={}, retrieved_vista=None ):
 
     saveobj = {
@@ -18,10 +17,8 @@ def make_vista(request, settings, queryset, defaults={}, retrieved_vista=None ):
         'combined_text_fields':[],
         'order_by':[],
     }
-    for key in defaults:
-        saveobj[key] = defaults[key]
-
-    print('tp m24b31', saveobj)
+    # for key in defaults:
+    #     saveobj[key] = defaults[key]
 
     def make_text_query(combined_text_search, combined_text_fields):
         text_query = None
@@ -71,12 +68,22 @@ def make_vista(request, settings, queryset, defaults={}, retrieved_vista=None ):
 
     local_post = request.POST.copy()
 
+    for key in defaults:
+        if key not in local_post:
+            if isinstance(defaults[key], list):
+                local_post.setlist( key, defaults[key] )
+            else:
+                local_post[key] = defaults[key]
+
     if retrieved_vista is not None:
         local_post['combined_text_search'] = retrieved_vista.combined_text_search
         if retrieved_vista.filterstring > '':
             retrieved_filter = json.loads(retrieved_vista.filterstring)
             for key in retrieved_filter:
-                local_post.setlist(key,retrieved_filter[key])
+                if isinstance(retrieved_filter[key], list):
+                    local_post.setlist(key,retrieved_filter[key])
+                else:
+                    local_post[key] = retrieved_filter[key]
 
     if 'combined_text_search' in local_post and local_post.get('combined_text_search') and 'text_fields_available' in settings:
         saveobj['combined_text_search'] = local_post.get('combined_text_search')
@@ -248,8 +255,12 @@ def make_vista(request, settings, queryset, defaults={}, retrieved_vista=None ):
     order_by = queryset.model._meta.ordering
     if 'order_by_fields_available' in settings and 'order_by' in local_post and local_post.getlist('order_by'):
         order_by = [fieldname for fieldname in local_post.getlist('order_by') if fieldname in settings['order_by_fields_available']]
+
+
     saveobj['order_by'] = order_by
     queryset = queryset.order_by(*order_by)
+
+    print('tp m2eb20', queryset.ordered)
 
     if 'paginate_by' in local_post and local_post.get('paginate_by'):
         saveobj['paginate_by'] = local_post.get('paginate_by')
@@ -259,17 +270,9 @@ def make_vista(request, settings, queryset, defaults={}, retrieved_vista=None ):
     else:
         save_vista(request, saveobj, queryset.model._meta.label_lower,resave=True)
 
+    print('tp m2eb13 ', queryset)
     return {'context': saveobj, 'queryset':queryset}
 
-# call this function in a try/except block to catch DoesNotExist.
-def retrieve_vista(request, settings, queryset, defaults):
-    print('tp m23625')
-
-    vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
-    print(vista__name)
-    vista = Vista.objects.filter(name=vista__name, user=request.user).latest('modified')
-    print(vista)
-    return make_vista(request, settings, queryset, defaults, vista)
 
 # call this function in a try/except block to catch DoesNotExist.
 def get_latest_vista(request, settings, queryset, defaults):
@@ -277,6 +280,18 @@ def get_latest_vista(request, settings, queryset, defaults):
     vista = Vista.objects.filter(user=request.user).latest('modified')
 
     return make_vista(request, settings, queryset, defaults, vista)
+
+
+
+# call this function in a try/except block to catch DoesNotExist.
+def retrieve_vista(request, settings, queryset, defaults):
+
+    vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
+    print(vista__name)
+    vista = Vista.objects.filter(name=vista__name, user=request.user).latest('modified')
+    print(vista)
+    return make_vista(request, settings, queryset, defaults, vista)
+
 
 def get_global_vista(request, settings, queryset, defaults):
 
