@@ -270,7 +270,6 @@ def make_vista(request, settings, queryset, defaults={}, retrieved_vista=None ):
     else:
         save_vista(request, saveobj, queryset.model._meta.label_lower,resave=True)
 
-    print('tp m2eb13 ', queryset)
     return {'context': saveobj, 'queryset':queryset}
 
 
