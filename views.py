@@ -258,7 +258,7 @@ def make_vista(request, settings, queryset, defaults={}, retrieved_vista=None ):
 
 
     saveobj['order_by'] = order_by
-    queryset = queryset.order_by(*order_by)
+    queryset = queryset.order_by(*order_by).distinct()
 
     print('tp m2eb20', queryset.ordered)
 
