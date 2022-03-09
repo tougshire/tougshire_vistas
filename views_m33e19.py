@@ -35,13 +35,13 @@ def make_vista(request, settings, queryset, defaults={}, retrieved_vista=None ):
 
     def save_vista(request, saveobj, model_name, resave=False):
 
-        vista__name = local_post.get('vista__name') if 'vista__name' in local_post else ''
+        vista_name = local_post.get('vista_name') if 'vista_name' in local_post else ''
 
         try:
-            vista, created = Vista.objects.get_or_create(name=vista__name, user=request.user)
+            vista, created = Vista.objects.get_or_create(name=vista_name, user=request.user)
         except Vista.MultipleObjectsReturned:
-            vista = Vista.objects.filter(name=vista__name, user=request.user)[0]
-            Vista.objects.filter(name=vista__name, user=request.user).exclude(pk=vista.pk).delete()
+            vista = Vista.objects.filter(name=vista_name, user=request.user)[0]
+            Vista.objects.filter(name=vista_name, user=request.user).exclude(pk=vista.pk).delete()
 
         vista.modified = datetime.date.today()
 
@@ -260,8 +260,6 @@ def make_vista(request, settings, queryset, defaults={}, retrieved_vista=None ):
     saveobj['order_by'] = order_by
     queryset = queryset.order_by(*order_by).distinct()
 
-    print('tp m2eb20', queryset.ordered)
-
     if 'paginate_by' in local_post and local_post.get('paginate_by'):
         saveobj['paginate_by'] = local_post.get('paginate_by')
 
@@ -285,9 +283,9 @@ def get_latest_vista(request, settings, queryset, defaults):
 # call this function in a try/except block to catch DoesNotExist.
 def retrieve_vista(request, settings, queryset, defaults):
 
-    vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
-    print(vista__name)
-    vista = Vista.objects.filter(name=vista__name, user=request.user).latest('modified')
+    vista_name = request.POST.get('vista_name') if 'vista_name' in request.POST else ''
+    print(vista_name)
+    vista = Vista.objects.filter(name=vista_name, user=request.user).latest('modified')
     print(vista)
     return make_vista(request, settings, queryset, defaults, vista)
 
@@ -300,5 +298,5 @@ def get_global_vista(request, settings, queryset, defaults):
 # does not return anything.  Most likely you'll want to call get_latest_vista after calling this
 def delete_vista(request):
 
-    vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
-    vista = Vista.objects.filter(name=vista__name, user=request.user).delete()
+    vista_name = request.POST.get('vista_name') if 'vista_name' in request.POST else ''
+    vista = Vista.objects.filter(name=vista_name, user=request.user).delete()

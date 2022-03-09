@@ -1,5 +1,5 @@
 import datetime
-import json
+import json, urllib
 
 from django.contrib import messages
 from django.core.exceptions import FieldError
@@ -9,7 +9,7 @@ from django.shortcuts import render
 
 from .models import Vista
 
-def make_vista(user, queryset, querydict, combined_text_search = '', combined_text_fields=[], order_by=[], vista_name='',  make_default=False, settings = {} ):
+def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_default=False, settings = {}, retrieve=False ):
 
     def make_type(field, datatype):
         if datatype=='date':
@@ -45,12 +45,17 @@ def make_vista(user, queryset, querydict, combined_text_search = '', combined_te
                     elif '[[None]]' in fval:
                         fval = fval.replace('[[None]]', '[None]')
 
-            print('tp m36k11', filter__fieldname + '__' + filter__op,    filter__value)
             built_query = { filter__fieldname + '__' + filter__op: filter__value }
             queryset = queryset.filter(**built_query)
 
 
         return queryset
+
+    if vista_name == '':
+        vista_name = querydict.get('vista_name')
+        if vista_name is None:
+            vista_name = ''
+
 
     if 'filter__fieldname' in querydict and 'filter__op' in querydict:
         queryset = queryset_filter(queryset, querydict)
@@ -64,7 +69,6 @@ def make_vista(user, queryset, querydict, combined_text_search = '', combined_te
     for indx in range(max_search_keys):
         if 'filter__fieldname__' + str(indx) in querydict and 'filter__op__' + str(indx) in querydict:
             queryset = queryset_filter(queryset, querydict, indx)
-
 
     if 'combined_text_search' in querydict and querydict.get('combined_text_search') > '' and 'text_fields_available' in settings and settings['text_fields_available']:
         combined_text_search = querydict.get('combined_text_search')
@@ -81,23 +85,21 @@ def make_vista(user, queryset, querydict, combined_text_search = '', combined_te
 
         queryset = queryset.filter(text_query)
 
+    order_by = querydict.getlist('order_by')
+    queryset = queryset.order_by(*order_by)
+
     try:
         vista, created = Vista.objects.get_or_create(name=vista_name, user=user)
     except Vista.MultipleObjectsReturned:
         vista = Vista.objects.filter(name=vista_name, user=user)[0]
         Vista.objects.filter(name=vista_name, user=user).exclude(pk=vista.pk).delete()
 
-
+    vista.name = vista_name
+    vista.user = user
     vista.modified = datetime.date.today()
-
     vista.is_default = make_default
-
     vista.filterstring = querydict.urlencode()
-    vista.combined_text_search = combined_text_search
-    vista.combined_text_fields = ','.join(combined_text_fields)
-    vista.sort_string = ','.join(order_by)
-
-    vista.model_name = queryset.model.__module__[:-6] + queryset.model.__name__
+    vista.model_name = queryset.model._meta.label_lower
 
     vista.save()
 
@@ -115,14 +117,16 @@ def get_latest_vista(request, settings, queryset, defaults):
 
 
 # call this function in a try/except block to catch DoesNotExist.
-def retrieve_vista(request, settings, queryset, defaults):
+# def make_vista(user, queryset, querydict, vista_name='', make_default=False, settings = {} ):
 
-    vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
-    print(vista__name)
-    vista = Vista.objects.filter(name=vista__name, user=request.user).latest('modified')
-    print(vista)
-    return make_vista(request, settings, queryset, defaults, vista)
+def retrieve_vista(user, queryset, model_name, vista_name, settings = {} ):
 
+    try:
+        vista = Vista.objects.filter(user=user, name=vista_name, model_name=model_name).latest('modified')
+    except:
+        vista = Vista.objects.all()
+
+    return make_vista(user, queryset, QueryDict(vista.filterstring), vista_name, False, settings, True )
 
 def get_global_vista(request, settings, queryset, defaults):
 
@@ -132,5 +136,29 @@ def get_global_vista(request, settings, queryset, defaults):
 # does not return anything.  Most likely you'll want to call get_latest_vista after calling this
 def delete_vista(request):
 
-    vista__name = request.POST.get('vista__name') if 'vista__name' in request.POST else ''
-    vista = Vista.objects.filter(name=vista__name, user=request.user).delete()
+    vista_name = request.POST.get('vista_name') if 'vista_name' in request.POST else ''
+    vista = Vista.objects.filter(name=vista_name, user=request.user).delete()
+
+def default_vista(user, queryset, defaults={}, settings={}):
+    model_name = queryset.model._meta.label_lower
+    try:
+        print('tp m39843')
+        vista = Vista.objects.filter(user=user, model_name=model_name, is_default=True).latest('modified')
+        return make_vista(user, queryset, QueryDict(vista.filterstring), vista.vista_name, False, settings, True )
+    except Vista.DoesNotExist:
+        try:
+            print('tp m39844')
+            vista = Vista.objects.filter(user=user,  model_name=model_name, is_global_default=True).latest('modified')
+            return make_vista(user, queryset, QueryDict(vista.filterstring), vista.vista_name, False, settings, True )
+        except Vista.DoesNotExist:
+            print('tp m39845')
+            return make_vista(
+                user,
+                queryset,
+                QueryDict(urllib.parse.urlencode(defaults)),
+                '',
+                True,
+                settings
+            )
+
+
