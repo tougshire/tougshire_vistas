@@ -1,9 +1,11 @@
 import datetime
 import json, urllib
+from xml.dom import ValidationErr
 
 from django.contrib import messages
 from django.core.exceptions import FieldError
 from django.db.models import Q
+from django.forms import ValidationError
 from django.http import QueryDict
 from django.shortcuts import render
 
@@ -11,16 +13,32 @@ from .models import Vista
 
 def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_default=False, settings = {}, retrieve=False ):
 
-    def make_type(field, datatype):
-        if datatype=='date':
-            try:
-                field = datetime.date.fromisoformat(field)
-            except ValueError:
+    def make_type(field_name, field_value):
+
+        field_type=''
+        if 'field_types' in settings and field_name in settings['field_types']:
+            field_type = settings['field_types'][field_name]
+            if field_type == 'date':
                 try:
-                    field = datetime.datetime.strptime(field, '%Y%m%d')
+                    field_value = datetime.date.fromisoformat(field_value)
                 except ValueError:
-                    field = datetime.datetime.now()
-        return field
+                    try:
+                        field_value = datetime.datetime.strptime(field_value, '%Y%m%d')
+                    except ValueError:
+                        field_value = datetime.datetime.now()
+            elif field_type == 'boolean':
+                if field_value:
+                    field_value = True
+                else:
+                    field_value = False
+
+        if field_value == '[None]':
+            field_value = None
+        elif '[[None]]' in str(field_value):
+            field_value = field_value.replace('[[None]]', '[None]')
+
+        print('tp m3ah43 returning ', field_value, ' for ', field_name, ': ', field_type)
+        return field_value
 
 
     def queryset_filter(queryset, querydict, indx = None):
@@ -36,17 +54,23 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
         if fieldnamekey in querydict and opkey in querydict:
             filter__fieldname = querydict.get(fieldnamekey)
             filter__op = querydict.get(opkey)
-            filter__value = querydict.get(valuekey)
-            if filter__op in ['in']:
+
+            filter__value = False
+
+            if valuekey in querydict:
+                filter__value = querydict.get(valuekey)
+                filter__value = make_type(filter__fieldname, filter__value)
+
+            if filter__op in ['in', 'range']:
                 filter__value = querydict.getlist(valuekey)
                 for fval in filter__value:
-                    if fval == '[None]':
-                        fval = None
-                    elif '[[None]]' in fval:
-                        fval = fval.replace('[[None]]', '[None]')
+                    fval = make_type(filter__fieldname, fval)
 
             built_query = { filter__fieldname + '__' + filter__op: filter__value }
-            queryset = queryset.filter(**built_query)
+            try:
+                queryset = queryset.filter(**built_query)
+            except (ValueError, ValidationError) as e:
+                print('Error ', e.__class__.__name__,  e, 'for query: ', built_query)
 
 
         return queryset
