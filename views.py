@@ -11,7 +11,7 @@ from django.shortcuts import render
 
 from .models import Vista
 
-def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_default=False, settings = {}, retrieve=False ):
+def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_default=False, settings = {}, do_save=True ):
 
     def make_type(field_name, field_value):
 
@@ -112,20 +112,21 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
     order_by = querydict.getlist('order_by')
     queryset = queryset.order_by(*order_by)
 
-    try:
-        vista, created = Vista.objects.get_or_create(name=vista_name, user=user)
-    except Vista.MultipleObjectsReturned:
-        vista = Vista.objects.filter(name=vista_name, user=user)[0]
-        Vista.objects.filter(name=vista_name, user=user).exclude(pk=vista.pk).delete()
+    if do_save:
+        try:
+            vista, created = Vista.objects.get_or_create(name=vista_name, user=user)
+        except Vista.MultipleObjectsReturned:
+            vista = Vista.objects.filter(name=vista_name, user=user)[0]
+            Vista.objects.filter(name=vista_name, user=user).exclude(pk=vista.pk).delete()
 
-    vista.name = vista_name
-    vista.user = user
-    vista.modified = datetime.date.today()
-    vista.is_default = make_default
-    vista.filterstring = querydict.urlencode()
-    vista.model_name = queryset.model._meta.label_lower
+        vista.name = vista_name
+        vista.user = user
+        vista.modified = datetime.date.today()
+        vista.is_default = make_default
+        vista.filterstring = querydict.urlencode()
+        vista.model_name = queryset.model._meta.label_lower
 
-    vista.save()
+        vista.save()
 
     return {'querydict': querydict, 'queryset':queryset}
 
