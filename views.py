@@ -112,6 +112,8 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
     order_by = querydict.getlist('order_by')
     queryset = queryset.order_by(*order_by)
 
+    queryset = queryset.distinct()
+
     if do_save:
         try:
             vista, created = Vista.objects.get_or_create(name=vista_name, user=user)
