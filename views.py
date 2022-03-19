@@ -110,6 +110,7 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
         queryset = queryset.filter(text_query)
 
     order_by = querydict.getlist('order_by')
+
     queryset = queryset.order_by(*order_by)
 
     queryset = queryset.distinct()
@@ -142,7 +143,6 @@ def get_latest_vista(request, settings, queryset, defaults):
     return make_vista(request, settings, queryset, defaults, vista)
 
 
-
 # call this function in a try/except block to catch DoesNotExist.
 # def make_vista(user, queryset, querydict, vista_name='', make_default=False, settings = {} ):
 
@@ -169,20 +169,20 @@ def delete_vista(request):
 def default_vista(user, queryset, defaults={}, settings={}):
     model_name = queryset.model._meta.label_lower
     try:
-        print('tp m39843')
+        print('Trying to retrieve latest is_default for user')
         vista = Vista.objects.filter(user=user, model_name=model_name, is_default=True).latest('modified')
-        return make_vista(user, queryset, QueryDict(vista.filterstring), vista.vista_name, False, settings, True )
+        return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
     except Vista.DoesNotExist:
         try:
-            print('tp m39844')
-            vista = Vista.objects.filter(user=user,  model_name=model_name, is_global_default=True).latest('modified')
-            return make_vista(user, queryset, QueryDict(vista.filterstring), vista.vista_name, False, settings, True )
+            print('Trying to retrieve latest global_default')
+            vista = Vista.objects.filter(model_name=model_name, is_global_default=True).latest('modified')
+            return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
         except Vista.DoesNotExist:
-            print('tp m39845')
+            print('Trying defaults from settings')
             return make_vista(
                 user,
                 queryset,
-                QueryDict(urllib.parse.urlencode(defaults)),
+                defaults,
                 '',
                 True,
                 settings
