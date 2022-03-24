@@ -13,6 +13,8 @@ from .models import Vista
 
 def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_default=False, settings = {}, do_save=True ):
 
+    print('tp m3nj51', querydict)
+
     def make_type(field_name, field_value):
 
         field_type=''
@@ -110,6 +112,7 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
         queryset = queryset.filter(text_query)
 
     order_by = querydict.getlist('order_by')
+    print('tp m3nj37', order_by)
 
     queryset = queryset.order_by(*order_by)
 
@@ -179,6 +182,7 @@ def default_vista(user, queryset, defaults={}, settings={}):
             return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
         except Vista.DoesNotExist:
             print('Trying defaults from settings')
+            print('tp m3o454', defaults)
             return make_vista(
                 user,
                 queryset,
