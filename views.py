@@ -1,6 +1,4 @@
 import datetime
-import json, urllib
-from xml.dom import ValidationErr
 
 from django.contrib import messages
 from django.core.exceptions import FieldError
@@ -65,8 +63,8 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
 
             if filter__op in ['in', 'range']:
                 filter__value = querydict.getlist(valuekey)
-                for fval in filter__value:
-                    fval = make_type(filter__fieldname, fval)
+                for fidx, fval in enumerate(filter__value):
+                    filter__value[fidx] = make_type(filter__fieldname, fval)
 
             built_query = { filter__fieldname + '__' + filter__op: filter__value }
             try:
