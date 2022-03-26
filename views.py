@@ -28,7 +28,10 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
                         field_value = datetime.datetime.now()
             elif field_type == 'boolean':
                 if field_value:
-                    field_value = True
+                    if field_value in ['False', 'false', '0']:
+                        field_value = False
+                    else:
+                        field_value = True
                 else:
                     field_value = False
 
