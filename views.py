@@ -74,7 +74,6 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
             except (ValueError, ValidationError) as e:
                 print('Error ', e.__class__.__name__,  e, 'for query: ', built_query)
 
-
         return queryset
 
     if vista_name == '':
@@ -242,6 +241,7 @@ def vista_fields(model, rels=False):
     return fields
 
 def vista_context_data(settings, querydict):
+
     context_data={}
 
     context_data['order_by_fields_available'] = [{ 'name':key, 'label':value['label'] } for key, value in settings['fields'].items() if 'order_by' in value['available_for'] ]
@@ -251,13 +251,14 @@ def vista_context_data(settings, querydict):
     context_data['columns_available'] = [{ 'name':key, 'label':value['label'] } for key, value in settings['fields'].items() if 'columns' in value['available_for'] ]
 
     context_data['filter'] = []
+
     for indx in range( settings['max_search_keys']):
         cdfilter = {}
         cdfilter['fieldname'] = querydict.get('filter__fieldname__' + str(indx)) if 'filter__fieldname__' + str(indx) in querydict else ''
         cdfilter['op'] = querydict.get('filter__op__' + str(indx) ) if 'filter__op__' + str(indx) in querydict else ''
         cdfilter['value'] = querydict.get('filter__value__' + str(indx)) if 'filter__value__' + str(indx) in querydict else ''
         if cdfilter['op'] in ['in', 'range']:
-            cdfilter['value'] = querydict.getlist('filter__value__' + str(indx)) if 'filter__value__'  + str(indx) in querydict else []
+            cdfilter['value'] = querydict.getlist('filter__value__' + str(indx)) if 'filter__value__' + str(indx) in querydict else []
         context_data['filter'].append(cdfilter)
 
     if 'order_by' in querydict:

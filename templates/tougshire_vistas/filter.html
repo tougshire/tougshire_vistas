@@ -35,6 +35,7 @@
       </div>
     </div>
     {% for filterset in filter %}
+
       <div id="div_fieldsearch__{{ forloop.counter0 }}" class="vista fieldsearch">
         <div class="rowlabel">
           Field Search
@@ -54,7 +55,7 @@
               <select id="ctl_filter__value__{{ field.name }}__{{ forloop.parentloop.counter0 }}"{% for attrname,attval in field.options.attrs.items %} {{ attrname }}="{{ attrval }}"{% endfor %}>
                 <option value="" >-----</option>
                 {% for option in field.queryset %}
-                  <option value="{{ option.pk }}"{% if option.pk|lower in filterset.value %} selected="SELECTED"{% endif %}>{{ option }}</option>
+                  <option value="{{ option.pk }}"{% if option.pk|stringformat:"s" in filterset.value %} selected="SELECTED"{% endif %}>{{ option }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -64,7 +65,9 @@
               <select id="ctl_filter__value__{{ field.name }}__{{ forloop.parentloop.counter0 }}"{% for attrname, attrval in field.options.attrs.items %} {{ attrname }}="{{ attrval }}"{% endfor %}>
                 <option value="" >-----</option>
                 {% for option in field.choices %}
-                  <option value="{{ option.0 }}"{% if option.0|lower in filterset.value %} selected="SELECTED"{% endif %}>{{ option.1 }}</option>
+                  <!-- 0=<{{ option.0|stringformat:"s" }}> -->
+                  {% for value in filterset.value %}<!-- val=<{{ value|stringformat:"s" }}> -->{% endfor %}
+                  <option value="{{ option.0 }}"{% if option.0|stringformat:"s" in filterset.value %} selected="SELECTED"{% endif %}>{{ option.1 }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -91,9 +94,9 @@
       <div class="rowlabel">
         Paginate By
       </div>
-      {% comment %} <div class="controlset value">
+      <div class="controlset value">
         <input name="paginate_by" value="{{ paginate_by }}">
-      </div> {% endcomment %}
+      </div>
 
       <div class="rowlabel">
         Show Fields
@@ -130,7 +133,6 @@
   </form>
   <script>
 
-    document.getElementById('frm_vista').action = document.getElementById('frm_vista').action.replace(/page=\d*/,"")
     function showFilterField(select) {
       let ctlNum = select.id.substring(19)
       let val_control
