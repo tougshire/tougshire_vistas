@@ -99,6 +99,7 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
 
         text_query = None
         text_fields_available = [ key for key, value in settings['fields'].items() if 'available_for' in value and 'quicksearch' in value['available_for']]
+        print('tp 224b612', text_fields_available)
         if text_fields_available > []:
             combined_text_search = querydict.get('combined_text_search')
             combined_text_fields = text_fields_available
@@ -229,13 +230,15 @@ def vista_fields(model, rels=False):
             if field.choices is not None:
                 fields[field.name]['choices'] = field.choices
 
+        print('tp 224b618', field.name)
+        print('tp 224b619', fields[field.name]['type'])
         if fields[field.name]['type'] in [
             'char',
-            'CharField'
-            'EmailField'
-            'SlugField'
-            'TextField'
-            'URLField'
+            'CharField',
+            'EmailField',
+            'SlugField',
+            'TextField',
+            'URLField',
         ]:
             fields[field.name]['available_for'] = [
                 'quicksearch',
