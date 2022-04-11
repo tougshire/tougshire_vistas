@@ -224,11 +224,53 @@ def vista_fields(model, rels=False):
                 'order_by',
                 'columns'
             ]
-
         else:
             fields[field.name]['label'] = field.verbose_name.title()
             if field.choices is not None:
                 fields[field.name]['choices'] = field.choices
+
+        if fields[field.name]['type'] in [
+            'char',
+            'CharField'
+            'EmailField'
+            'SlugField'
+            'TextField'
+            'URLField'
+        ]:
+            fields[field.name]['available_for'] = [
+                'quicksearch',
+                'fieldsearch',
+                'order_by',
+                'columns'
+            ]
+        if fields[field.name]['type'] in [
+            'int',
+            'AutoField',
+            'BigAutoField',
+            'BigIntegerField',
+            'BinaryField',
+            'BooleanField',
+            'DecimalField',
+            'DurationField',
+            'FloatField',
+            'IntegerField',
+            'PositiveBigIntegerField',
+            'PositiveIntegerField',
+            'PositiveSmallIntegerField',
+            'SmallAutoField',
+            'SmallIntegerField',
+        ]:
+            fields[field.name]['available_for'] = [
+                'fieldsearch',
+                'order_by',
+                'columns'
+            ]
+        if fields[field.name]['type'] in [
+            'date',
+            'DateField',
+            'DateTimeField',
+            'TimeField',
+        ]:
             fields[field.name]['available_for'] = [
                 'fieldsearch',
                 'order_by',
@@ -237,6 +279,36 @@ def vista_fields(model, rels=False):
 
         if 'id' in fields:
             del fields['id']
+
+    # AutoField
+    # BigAutoField
+    # BigIntegerField
+    # BinaryField
+    # BooleanField
+    # CharField
+    # DateField
+    # DateTimeField
+    # DecimalField
+    # DurationField
+    # EmailField
+    # FileField
+    #     FileField and FieldFile
+    # FilePathField
+    # FloatField
+    # GenericIPAddressField
+    # ImageField
+    # IntegerField
+    # JSONField
+    # PositiveBigIntegerField
+    # PositiveIntegerField
+    # PositiveSmallIntegerField
+    # SlugField
+    # SmallAutoField
+    # SmallIntegerField
+    # TextField
+    # TimeField
+    # URLField
+    # UUIDField
 
     return fields
 
