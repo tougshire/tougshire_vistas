@@ -149,11 +149,14 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
 
 # call this function in a try/except block to catch DoesNotExist.
 
-def get_latest_vista(request, settings, queryset, defaults):
-
-    vista = Vista.objects.filter(user=request.user).latest('modified')
-
-    return make_vista(request, settings, queryset, defaults, vista)
+def get_latest_vista(user, queryset, defaults={}, settings={}):
+    model_name = queryset.model._meta.label_lower
+    try:
+        print('Trying to retrieve latest for user')
+        vista = Vista.objects.filter(user=user, model_name=model_name).latest('modified')
+        return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
+    except Vista.DoesNotExist:
+        return default_vista( user, queryset, defaults, settings )
 
 
 # call this function in a try/except block to catch DoesNotExist.
@@ -230,8 +233,6 @@ def vista_fields(model, rels=False):
             if field.choices is not None:
                 fields[field.name]['choices'] = field.choices
 
-        print('tp 224b618', field.name)
-        print('tp 224b619', fields[field.name]['type'])
         if fields[field.name]['type'] in [
             'char',
             'CharField',
