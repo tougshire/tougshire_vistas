@@ -52,7 +52,6 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
         if indx is not None:
             [fieldnamekey, opkey, valuekey] = [key + '__' + str(indx) for key in [fieldnamekey, opkey, valuekey]]
 
-
         if fieldnamekey in querydict and opkey in querydict:
             filter__fieldname = querydict.get(fieldnamekey)
             filter__op = querydict.get(opkey)
@@ -99,7 +98,7 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
 
         text_query = None
         text_fields_available = [ key for key, value in settings['fields'].items() if 'available_for' in value and 'quicksearch' in value['available_for']]
-        print('tp 224b612', text_fields_available)
+
         if text_fields_available > []:
             combined_text_search = querydict.get('combined_text_search')
             combined_text_fields = text_fields_available
@@ -204,85 +203,121 @@ def default_vista(user, queryset, defaults={}, settings={}):
                 settings
             )
 
-def vista_fields(model, rels=False):
-    fields = {}
+def make_vista_fields(model, rels=False):
 
-    for field in model._meta.get_fields():
-        fields[field.name] = {
-            'type':type(field).__name__,
-            'available_for':[]
+    vista_fields = {}
+
+    for model_field in model._meta.get_fields():
+
+        vista_fields[model_field.name] = {
+            'type':type(model_field).__name__,
         }
-        if fields[field.name]['type'][-3:] == 'Rel':
+
+        if vista_fields[model_field.name]['type'][-3:] == 'Rel':
             if rels:
-                fields[field.name]['label'] = field.related_model._meta.verbose_name.title()
-                fields[field.name]['queryset'] = field.related_model.objects.all()
-                fields[field.name]['available_for'] = [
+                vista_fields[model_field.name] = {
+                    'label': model_field.related_model._meta.verbose_name.title(),
+                    'queryset': model_field.related_model.objects.all(),
+                    'available_for': [
+                        'fieldsearch',
+                        'columns',
+                    ],
+                    'operators': [
+                        ('exact', 'is')
+                    ]
+                }
+
+                try:
+                    vista_fields[model_field.name]['label'] = model_field.related_name.title()
+                except AttributeError:
+                    try:
+                        vista_fields[model_field.name]['label'] = model_field.verbose_name.title()
+                    except AttributeError:
+                        pass
+
+        elif vista_fields[model_field.name]['type'] == 'ForeignKey':
+            vista_fields[model_field.name] = {
+                'label': model_field.verbose_name.title(),
+                'queryset': model_field.related_model.objects.all(),
+                'available_for': [
                     'fieldsearch',
+                    'order_by',
+                    'columns'
+                ],
+                'operators': [
+                    ('exact', 'is')
+                ]
+            }
+        # now, if not a Rel or ForeignKey
+        else:
+            vista_fields[model_field.name]['label'] = model_field.verbose_name.title()
+            if model_field.choices is not None:
+                vista_fields[model_field.name]['choices'] = model_field.choices
+
+            if vista_fields[model_field.name]['type'] in [
+                'char',
+                'CharField',
+                'EmailField',
+                'SlugField',
+                'TextField',
+                'URLField',
+            ]:
+                vista_fields[model_field.name]['available_for'] = [
+                    'quicksearch',
+                    'fieldsearch',
+                    'order_by',
                     'columns'
                 ]
-        elif fields[field.name]['type'] == 'ForeignKey':
-            fields[field.name]['label'] = field.verbose_name.title()
-            fields[field.name]['queryset'] = field.related_model.objects.all()
-            fields[field.name]['available_for'] = [
-                'fieldsearch',
-                'order_by',
-                'columns'
-            ]
-        else:
-            fields[field.name]['label'] = field.verbose_name.title()
-            if field.choices is not None:
-                fields[field.name]['choices'] = field.choices
+                vista_fields[model_field.name]['operators'] = [
+                    ('iexact', 'is'),
+                    ('icontains', 'contains')
+                ]
+            if vista_fields[model_field.name]['type'] in [
+                'int',
+                'AutoField',
+                'BigAutoField',
+                'BigIntegerField',
+                'BinaryField',
+                'BooleanField',
+                'DecimalField',
+                'DurationField',
+                'FloatField',
+                'IntegerField',
+                'PositiveBigIntegerField',
+                'PositiveIntegerField',
+                'PositiveSmallIntegerField',
+                'SmallAutoField',
+                'SmallIntegerField',
+            ]:
+                vista_fields[model_field.name]['available_for'] = [
+                    'fieldsearch',
+                    'order_by',
+                    'columns'
+                ]
+                vista_fields[model_field.name]['operators'] = [
+                    ('exact', 'is'),
+                    ('gt', 'greater than'),
+                    ('lt', 'less than'),
+                ]
+            if vista_fields[model_field.name]['type'] in [
+                'date',
+                'DateField',
+                'DateTimeField',
+                'TimeField',
+            ]:
+                vista_fields[model_field.name]['available_for'] = [
+                    'fieldsearch',
+                    'order_by',
+                    'columns'
+                ]
+                vista_fields[model_field.name]['operators'] = [
+                    ('exact', 'is'),
+                    ('gt', 'greater than'),
+                    ('lt', 'less than'),
+                ]
+        if 'id' in vista_fields:
+            del vista_fields['id']
 
-        if fields[field.name]['type'] in [
-            'char',
-            'CharField',
-            'EmailField',
-            'SlugField',
-            'TextField',
-            'URLField',
-        ]:
-            fields[field.name]['available_for'] = [
-                'quicksearch',
-                'fieldsearch',
-                'order_by',
-                'columns'
-            ]
-        if fields[field.name]['type'] in [
-            'int',
-            'AutoField',
-            'BigAutoField',
-            'BigIntegerField',
-            'BinaryField',
-            'BooleanField',
-            'DecimalField',
-            'DurationField',
-            'FloatField',
-            'IntegerField',
-            'PositiveBigIntegerField',
-            'PositiveIntegerField',
-            'PositiveSmallIntegerField',
-            'SmallAutoField',
-            'SmallIntegerField',
-        ]:
-            fields[field.name]['available_for'] = [
-                'fieldsearch',
-                'order_by',
-                'columns'
-            ]
-        if fields[field.name]['type'] in [
-            'date',
-            'DateField',
-            'DateTimeField',
-            'TimeField',
-        ]:
-            fields[field.name]['available_for'] = [
-                'fieldsearch',
-                'order_by',
-                'columns'
-            ]
-
-        if 'id' in fields:
-            del fields['id']
 
     # AutoField
     # BigAutoField
@@ -314,7 +349,7 @@ def vista_fields(model, rels=False):
     # URLField
     # UUIDField
 
-    return fields
+    return vista_fields
 
 def vista_context_data(settings, querydict):
 
@@ -322,7 +357,32 @@ def vista_context_data(settings, querydict):
 
     context_data['order_by_fields_available'] = [{ 'name':key, 'label':value['label'] } for key, value in settings['fields'].items() if 'order_by' in value['available_for'] ]
 
-    context_data['filter_fields_available'] = [{ 'name':key, 'label':value['label'], 'type':settings['fields'][key]['type'] if 'type' in settings['fields'][key] else '', 'queryset':settings['fields'][key]['queryset'] if 'queryset' in settings['fields'][key] else '', 'choices':settings['fields'][key]['choices'] if 'choices' in settings['fields'][key] else '' } for key, value in settings['fields'].items() if 'fieldsearch' in value['available_for'] ]
+    # context_data['filter_fields_available'] = [{ 'name':key, 'label':value['label'], 'type':settings['fields'][key]['type'] if 'type' in settings['fields'][key] else '', 'queryset':settings['fields'][key]['queryset'] if 'queryset' in settings['fields'][key] else '', 'choices':settings['fields'][key]['choices'] if 'choices' in settings['fields'][key] else '' } for key, value in settings['fields'].items() if 'fieldsearch' in value['available_for'] ]
+
+    context_data['filter_fields_available'] = []
+
+    for key, value in settings['fields'].items():
+        if 'fieldsearch' in value['available_for']:
+            filter_field = {
+                'name': key,
+                'label': value['label'],
+                'type': value['type'] if 'type' in value else '',
+            }
+
+            for subkey in ['type', 'queryset', 'choices', 'operators']:
+                if subkey in value:
+                    filter_field[subkey] = value[subkey]
+
+            if not 'operators' in filter_field:
+                filter_field['operators'] = [('exact', 'is')]
+
+            context_data['filter_fields_available'].append(filter_field)
+            if(filter_field['name'] == 'connection'):
+                print('tp 224h840', filter_field)
+
+    for filter_field in context_data['filter_fields_available']:
+        if filter_field['name'] == 'connection':
+            print('tp 224h842', filter_field)
 
     context_data['columns_available'] = [{ 'name':key, 'label':value['label'] } for key, value in settings['fields'].items() if 'columns' in value['available_for'] ]
 

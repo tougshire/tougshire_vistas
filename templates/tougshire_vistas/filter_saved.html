@@ -49,17 +49,9 @@
           </select>
         </div>
         {% for field in filter_fields_available %}
-        {% comment %} #mk 224d614 {% endcomment %}
-          <div id="div_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}" class="controlset filter__value" style="display:none">
-            <select id="ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}"><!-- field: {{ field|safe }} -->
-              {% for option in field.operators.items %}
-                <option value="{{ option.0 }}"{% if option.0|stringformat:"s" == filterset.op %} selected="SELECTED"{% endif %}>{{ option.1 }}</option>
-              {% endfor %}
-            </select>
-          </div>
           {% if field.queryset %}
             <div id="div_filter__{{ field.name }}__{{ forloop.parentloop.counter0 }}" class="controlset filter__value" style="display:none">
-              {% comment %} <input type="hidden" id="ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}" value="in"> {% endcomment %}
+              <input type="hidden" id="ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}" value="in">
               <select id="ctl_filter__value__{{ field.name }}__{{ forloop.parentloop.counter0 }}"{% for attrname,attval in field.options.attrs.items %} {{ attrname }}="{{ attrval }}"{% endfor %}>
                 <option value="" >-----</option>
                 {% for option in field.queryset %}
