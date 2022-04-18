@@ -49,10 +49,9 @@
           </select>
         </div>
         {% for field in filter_fields_available %}
-        {% comment %} #mk 224d614 {% endcomment %}
           <div id="div_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}" class="controlset filter__value" style="display:none">
-            <select id="ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}"><!-- field: {{ field|safe }} -->
-              {% for option in field.operators.items %}
+            <select id="ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}">
+              {% for option in field.operators %}
                 <option value="{{ option.0 }}"{% if option.0|stringformat:"s" == filterset.op %} selected="SELECTED"{% endif %}>{{ option.1 }}</option>
               {% endfor %}
             </select>

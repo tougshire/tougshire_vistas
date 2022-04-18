@@ -1,5 +1,7 @@
 import datetime
 
+from inspect import currentframe, getframeinfo
+
 from django.contrib import messages
 from django.core.exceptions import FieldError
 from django.db.models import Q
@@ -213,7 +215,7 @@ def make_vista_fields(model, rels=False):
             'type':type(model_field).__name__,
         }
 
-        if vista_fields[model_field.name]['type'][-3:] == 'Rel':
+        if vista_fields[model_field.name]['type'] == 'ManyToManyRel':
             if rels:
                 vista_fields[model_field.name] = {
                     'label': model_field.related_model._meta.verbose_name.title(),
@@ -229,11 +231,32 @@ def make_vista_fields(model, rels=False):
 
                 try:
                     vista_fields[model_field.name]['label'] = model_field.related_name.title()
-                except AttributeError:
+                except AttributeError as e:
+                    print('tp 224hc37', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
                     try:
                         vista_fields[model_field.name]['label'] = model_field.verbose_name.title()
-                    except AttributeError:
+                    except AttributeError as e:
+                        print('tp 224hc38', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
                         pass
+        elif vista_fields[model_field.name]['type'] == 'ManyToOneRel':
+            if rels:
+                vista_fields[model_field.name] = {
+                    'label': model_field.related_model._meta.verbose_name.title(),
+                    'queryset': model_field.related_model.objects.all(),
+                    'available_for': [
+                        'fieldsearch',
+                        'columns',
+                    ],
+                    'operators': [
+                        ('in', 'has')
+                    ]
+                }
+
+                try:
+                    vista_fields[model_field.name]['label'] = model_field.related_name.title()
+                except AttributeError as e:
+                    print('tp 224hc35', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
+                    pass
 
         elif vista_fields[model_field.name]['type'] == 'ForeignKey':
             vista_fields[model_field.name] = {
