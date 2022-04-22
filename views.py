@@ -199,6 +199,7 @@ def default_vista(user, queryset, defaults={}, settings={}):
             return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
         except Vista.DoesNotExist:
             print('Trying defaults from settings')
+            print('tp 224md50', defaults)
             return make_vista(
                 user,
                 queryset,
@@ -217,7 +218,6 @@ def make_vista_fields(model, field_names=[]):
         field_names = [ field.name for field in model._meta.get_fields() ]
 
     for field_name in field_names:
-        print('tp 224kj44', field_name)
         chained_label = ''
         if '__' in field_name:
             chain_model = model
