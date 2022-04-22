@@ -419,6 +419,8 @@ def vista_context_data(settings, querydict):
 
     context_data['columns_available'] = [{ 'name':key, 'label':value['label'] } for key, value in settings['fields'].items() if 'columns' in value['available_for'] ]
 
+    context_data['labels'] = { key: value['label'] for key, value in settings['fields'].items() if 'columns' in value['available_for'] }
+
     context_data['filter'] = []
 
     for indx in range( settings['max_search_keys']):
