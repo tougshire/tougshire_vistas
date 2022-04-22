@@ -2,6 +2,7 @@ import datetime
 
 from inspect import currentframe, getframeinfo
 
+from django.apps import apps
 from django.contrib import messages
 from django.core.exceptions import FieldError
 from django.db.models import Q
@@ -145,6 +146,8 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
 
         vista.save()
 
+        print( 'tp 224kl33', querydict)
+
     return {'querydict': querydict, 'queryset':queryset}
 
 
@@ -205,79 +208,94 @@ def default_vista(user, queryset, defaults={}, settings={}):
                 settings
             )
 
-def make_vista_fields(model, rels=False):
+
+def make_vista_fields(model, field_names=[]):
 
     vista_fields = {}
 
-    for model_field in model._meta.get_fields():
+    if field_names == []:
+        field_names = [ field.name for field in model._meta.get_fields() ]
 
-        vista_fields[model_field.name] = {
+    for field_name in field_names:
+        print('tp 224kj44', field_name)
+        chained_label = ''
+        if '__' in field_name:
+            chain_model = model
+            chain = field_name.split('__')
+            for l in range( len( chain ) -1 ):
+                try:
+                    chained_label = chained_label + chain_model._meta.get_field(chain[l]).verbose_name.title() + ' '
+                except AttributeError as e:
+                    chained_label = chained_label + chain_model._meta.get_field(chain[l]).related_name.title() + ' '
+                    pass
+
+                chain_model = apps.get_model(app_label='libtekin', model_name=chain_model._meta.get_field(chain[l]).related_model.__name__)
+                model_field = chain_model._meta.get_field(chain[l + 1])
+
+        else:
+            model_field = model._meta.get_field(field_name)
+
+        vista_fields[field_name] = {
             'type':type(model_field).__name__,
         }
 
-        if vista_fields[model_field.name]['type'] == 'ManyToManyRel':
-            if rels:
-                vista_fields[model_field.name] = {
-                    'label': model_field.related_model._meta.verbose_name.title(),
-                    'queryset': model_field.related_model.objects.all(),
-                    'available_for': [
-                        'fieldsearch',
-                        'columns',
-                    ],
-                    'operators': [
-                        ('exact', 'is')
-                    ]
-                }
+        if vista_fields[field_name]['type'] == 'ManyToManyRel':
+            vista_fields[field_name]['label'] = chained_label + model_field.related_model._meta.verbose_name.title()
+            vista_fields[field_name]['queryset'] = model_field.related_model.objects.all()
+            vista_fields[field_name]['available_for'] = [
+                    'fieldsearch',
+                    'columns',
+                ]
+            vista_fields[field_name]['operators'] = [
+                    ('in', 'is in')
+                ]
 
+            try:
+                vista_fields[field_name]['label'] = chained_label + model_field.related_name.title()
+            except AttributeError as e:
+                print('tp 224hc37', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
                 try:
-                    vista_fields[model_field.name]['label'] = model_field.related_name.title()
+                    vista_fields[field_name]['label'] = model_field.verbose_name.title()
                 except AttributeError as e:
-                    print('tp 224hc37', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
-                    try:
-                        vista_fields[model_field.name]['label'] = model_field.verbose_name.title()
-                    except AttributeError as e:
-                        print('tp 224hc38', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
-                        pass
-        elif vista_fields[model_field.name]['type'] == 'ManyToOneRel':
-            if rels:
-                vista_fields[model_field.name] = {
-                    'label': model_field.related_model._meta.verbose_name.title(),
-                    'queryset': model_field.related_model.objects.all(),
-                    'available_for': [
-                        'fieldsearch',
-                        'columns',
-                    ],
-                    'operators': [
-                        ('in', 'has')
-                    ]
-                }
-
-                try:
-                    vista_fields[model_field.name]['label'] = model_field.related_name.title()
-                except AttributeError as e:
-                    print('tp 224hc35', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
+                    print('tp 224hc38', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
                     pass
 
-        elif vista_fields[model_field.name]['type'] == 'ForeignKey':
-            vista_fields[model_field.name] = {
-                'label': model_field.verbose_name.title(),
-                'queryset': model_field.related_model.objects.all(),
-                'available_for': [
+        elif vista_fields[field_name]['type'] == 'ManyToOneRel':
+            vista_fields[field_name]['label'] = chained_label + model_field.related_model._meta.verbose_name.title()
+            vista_fields[field_name]['queryset'] = model_field.related_model.objects.all()
+            vista_fields[field_name]['available_for'] = [
+                    'fieldsearch',
+                    'columns',
+                ]
+            vista_fields[field_name]['operators'] = [
+                    ('in', 'has')
+                ]
+
+            try:
+                vista_fields[field_name]['label'] = chained_label + model_field.related_name.title()
+            except AttributeError as e:
+                print('tp 224hc35', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
+                pass
+
+        elif vista_fields[field_name]['type'] == 'ForeignKey':
+            vista_fields[field_name]['label'] = chained_label + model_field.verbose_name.title()
+            vista_fields[field_name]['queryset'] = model_field.related_model.objects.all()
+            vista_fields[field_name]['available_for'] = [
                     'fieldsearch',
                     'order_by',
                     'columns'
-                ],
-                'operators': [
-                    ('exact', 'is')
                 ]
-            }
+            vista_fields[field_name]['operators'] = [
+                    ('in', 'is in')
+                ]
+
         # now, if not a Rel or ForeignKey
         else:
-            vista_fields[model_field.name]['label'] = model_field.verbose_name.title()
+            vista_fields[field_name]['label'] = chained_label + model_field.verbose_name.title()
             if model_field.choices is not None:
-                vista_fields[model_field.name]['choices'] = model_field.choices
+                vista_fields[field_name]['choices'] = model_field.choices
 
-            if vista_fields[model_field.name]['type'] in [
+            if vista_fields[field_name]['type'] in [
                 'char',
                 'CharField',
                 'EmailField',
@@ -285,17 +303,17 @@ def make_vista_fields(model, rels=False):
                 'TextField',
                 'URLField',
             ]:
-                vista_fields[model_field.name]['available_for'] = [
+                vista_fields[field_name]['available_for'] = [
                     'quicksearch',
                     'fieldsearch',
                     'order_by',
                     'columns'
                 ]
-                vista_fields[model_field.name]['operators'] = [
+                vista_fields[field_name]['operators'] = [
+                    ('icontains', 'contains'),
                     ('iexact', 'is'),
-                    ('icontains', 'contains')
                 ]
-            if vista_fields[model_field.name]['type'] in [
+            if vista_fields[field_name]['type'] in [
                 'int',
                 'AutoField',
                 'BigAutoField',
@@ -312,28 +330,28 @@ def make_vista_fields(model, rels=False):
                 'SmallAutoField',
                 'SmallIntegerField',
             ]:
-                vista_fields[model_field.name]['available_for'] = [
+                vista_fields[field_name]['available_for'] = [
                     'fieldsearch',
                     'order_by',
                     'columns'
                 ]
-                vista_fields[model_field.name]['operators'] = [
+                vista_fields[field_name]['operators'] = [
                     ('exact', 'is'),
                     ('gt', 'greater than'),
                     ('lt', 'less than'),
                 ]
-            if vista_fields[model_field.name]['type'] in [
+            if vista_fields[field_name]['type'] in [
                 'date',
                 'DateField',
                 'DateTimeField',
                 'TimeField',
             ]:
-                vista_fields[model_field.name]['available_for'] = [
+                vista_fields[field_name]['available_for'] = [
                     'fieldsearch',
                     'order_by',
                     'columns'
                 ]
-                vista_fields[model_field.name]['operators'] = [
+                vista_fields[field_name]['operators'] = [
                     ('exact', 'is'),
                     ('gt', 'greater than'),
                     ('lt', 'less than'),
@@ -380,8 +398,6 @@ def vista_context_data(settings, querydict):
 
     context_data['order_by_fields_available'] = [{ 'name':key, 'label':value['label'] } for key, value in settings['fields'].items() if 'order_by' in value['available_for'] ]
 
-    # context_data['filter_fields_available'] = [{ 'name':key, 'label':value['label'], 'type':settings['fields'][key]['type'] if 'type' in settings['fields'][key] else '', 'queryset':settings['fields'][key]['queryset'] if 'queryset' in settings['fields'][key] else '', 'choices':settings['fields'][key]['choices'] if 'choices' in settings['fields'][key] else '' } for key, value in settings['fields'].items() if 'fieldsearch' in value['available_for'] ]
-
     context_data['filter_fields_available'] = []
 
     for key, value in settings['fields'].items():
@@ -400,12 +416,6 @@ def vista_context_data(settings, querydict):
                 filter_field['operators'] = [('exact', 'is')]
 
             context_data['filter_fields_available'].append(filter_field)
-            if(filter_field['name'] == 'connection'):
-                print('tp 224h840', filter_field)
-
-    for filter_field in context_data['filter_fields_available']:
-        if filter_field['name'] == 'connection':
-            print('tp 224h842', filter_field)
 
     context_data['columns_available'] = [{ 'name':key, 'label':value['label'] } for key, value in settings['fields'].items() if 'columns' in value['available_for'] ]
 
