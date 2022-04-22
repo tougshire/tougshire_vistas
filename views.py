@@ -300,7 +300,6 @@ def make_vista_fields(model, field_names=[]):
                 'CharField',
                 'EmailField',
                 'SlugField',
-                'TextField',
                 'URLField',
             ]:
                 vista_fields[field_name]['available_for'] = [
@@ -308,6 +307,17 @@ def make_vista_fields(model, field_names=[]):
                     'fieldsearch',
                     'order_by',
                     'columns'
+                ]
+                vista_fields[field_name]['operators'] = [
+                    ('icontains', 'contains'),
+                    ('iexact', 'is'),
+                ]
+            if vista_fields[field_name]['type'] in [
+                'TextField',
+            ]:
+                vista_fields[field_name]['available_for'] = [
+                    'quicksearch',
+                    'fieldsearch',
                 ]
                 vista_fields[field_name]['operators'] = [
                     ('icontains', 'contains'),
