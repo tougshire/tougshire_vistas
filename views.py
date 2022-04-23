@@ -294,6 +294,7 @@ def make_vista_fields(model, field_names=[]):
             vista_fields[field_name]['label'] = chained_label + model_field.verbose_name.title()
             if model_field.choices is not None:
                 vista_fields[field_name]['choices'] = model_field.choices
+                vista_fields[field_name]['operators'] = [('in', 'is in')]
 
             if vista_fields[field_name]['type'] in [
                 'char',
@@ -308,11 +309,12 @@ def make_vista_fields(model, field_names=[]):
                     'order_by',
                     'columns'
                 ]
-                vista_fields[field_name]['operators'] = [
-                    ('icontains', 'contains'),
-                    ('iexact', 'is'),
-                ]
-            if vista_fields[field_name]['type'] in [
+                if not 'operators' in vista_fields[field_name]:
+                    vista_fields[field_name]['operators'] = [
+                        ('icontains', 'contains'),
+                        ('iexact', 'is'),
+                    ]
+            elif vista_fields[field_name]['type'] in [
                 'TextField',
             ]:
                 vista_fields[field_name]['available_for'] = [
@@ -321,9 +323,8 @@ def make_vista_fields(model, field_names=[]):
                 ]
                 vista_fields[field_name]['operators'] = [
                     ('icontains', 'contains'),
-                    ('iexact', 'is'),
                 ]
-            if vista_fields[field_name]['type'] in [
+            elif vista_fields[field_name]['type'] in [
                 'int',
                 'AutoField',
                 'BigAutoField',
@@ -345,12 +346,13 @@ def make_vista_fields(model, field_names=[]):
                     'order_by',
                     'columns'
                 ]
-                vista_fields[field_name]['operators'] = [
-                    ('exact', 'is'),
-                    ('gt', 'greater than'),
-                    ('lt', 'less than'),
-                ]
-            if vista_fields[field_name]['type'] in [
+                if not 'operators' in vista_fields[field_name]:
+                    vista_fields[field_name]['operators'] = [
+                        ('exact', 'is'),
+                        ('gt', 'greater than'),
+                        ('lt', 'less than'),
+                    ]
+            elif vista_fields[field_name]['type'] in [
                 'date',
                 'DateField',
                 'DateTimeField',
@@ -361,11 +363,12 @@ def make_vista_fields(model, field_names=[]):
                     'order_by',
                     'columns'
                 ]
-                vista_fields[field_name]['operators'] = [
-                    ('exact', 'is'),
-                    ('gt', 'greater than'),
-                    ('lt', 'less than'),
-                ]
+                if not 'operators' in vista_fields[field_name]:
+                    vista_fields[field_name]['operators'] = [
+                        ('exact', 'is'),
+                        ('gt', 'greater than'),
+                        ('lt', 'less than'),
+                    ]
         if 'id' in vista_fields:
             del vista_fields['id']
 
@@ -411,6 +414,7 @@ def vista_context_data(settings, querydict):
     context_data['filter_fields_available'] = []
 
     for key, value in settings['fields'].items():
+        print('tp 224mh56', key)
         if 'fieldsearch' in value['available_for']:
             filter_field = {
                 'name': key,
@@ -420,6 +424,7 @@ def vista_context_data(settings, querydict):
 
             for subkey in ['type', 'queryset', 'choices', 'operators']:
                 if subkey in value:
+                    print('tp 224mh55', subkey, value[subkey])
                     filter_field[subkey] = value[subkey]
 
             if not 'operators' in filter_field:

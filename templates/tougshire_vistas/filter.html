@@ -56,6 +56,7 @@
               {% endfor %}
             </select>
           </div>
+          <script>console.log("field.queryset={{ field.queryset }}");</script>
           {% if field.queryset %}
             <div id="div_filter__{{ field.name }}__{{ forloop.parentloop.counter0 }}" class="controlset filter__value" style="display:none">
               {% comment %} <input type="hidden" id="ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}" value="in"> {% endcomment %}
@@ -66,14 +67,13 @@
                 {% endfor %}
               </select>
             </div>
+            <script>console.log("field.choices={{ field.choices }}");</script>
             {% elif field.choices %}
             <div id="div_filter__{{ field.name }}__{{ forloop.parentloop.counter0 }}" class="controlset filter__value" style="display:none">
-              <input type="hidden" id="ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}" value="in">
+              {% comment %} <input type="hidden" id="ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}" value="in"> {% endcomment %}
               <select multiple="MULTIPLE" id="ctl_filter__value__{{ field.name }}__{{ forloop.parentloop.counter0 }}"{% for attrname, attrval in field.options.attrs.items %} {{ attrname }}="{{ attrval }}"{% endfor %}>
                 <option value="" >-----</option>
                 {% for option in field.choices %}
-                  <!-- 0=<{{ option.0|stringformat:"s" }}> -->
-                  {% for value in filterset.value %}<!-- val=<{{ value|stringformat:"s" }}> -->{% endfor %}
                   <option value="{{ option.0 }}"{% if option.0|stringformat:"s" in filterset.value %} selected="SELECTED"{% endif %}>{{ option.1 }}</option>
                 {% endfor %}
               </select>
