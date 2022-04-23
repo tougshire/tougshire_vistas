@@ -65,7 +65,6 @@
               <select id="ctl_filter__value__{{ field.name }}__{{ forloop.parentloop.counter0 }}"{% for attrname, attrval in field.options.attrs.items %} {{ attrname }}="{{ attrval }}"{% endfor %}>
                 <option value="" >-----</option>
                 {% for option in field.choices %}
-                  <!-- 0=<{{ option.0|stringformat:"s" }}> -->
                   {% for value in filterset.value %}<!-- val=<{{ value|stringformat:"s" }}> -->{% endfor %}
                   <option value="{{ option.0 }}"{% if option.0|stringformat:"s" in filterset.value %} selected="SELECTED"{% endif %}>{{ option.1 }}</option>
                 {% endfor %}
