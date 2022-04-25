@@ -226,7 +226,7 @@ def make_vista_fields(model, field_names=[]):
                     chained_label = chained_label + chain_model._meta.get_field(chain[l]).related_name.title() + ' '
                     pass
 
-                chain_model = apps.get_model(app_label='libtekin', model_name=chain_model._meta.get_field(chain[l]).related_model.__name__)
+                chain_model = apps.get_model(app_label='sdcpeople', model_name=chain_model._meta.get_field(chain[l]).related_model.__name__)
                 model_field = chain_model._meta.get_field(chain[l + 1])
 
         else:
