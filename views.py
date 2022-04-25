@@ -257,7 +257,7 @@ def make_vista_fields(model, field_names=[]):
                     print('tp 224hc38', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
                     pass
 
-        elif vista_fields[field_name]['type'] == 'ManyToOneRel':
+        elif vista_fields[field_name]['type'] == 'ManyToOneField':
             vista_fields[field_name]['label'] = chained_label + model_field.related_model._meta.verbose_name.title()
             vista_fields[field_name]['queryset'] = model_field.related_model.objects.all()
             vista_fields[field_name]['available_for'] = [
