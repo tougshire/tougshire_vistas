@@ -146,8 +146,6 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
 
         vista.save()
 
-        print( 'tp 224kl33', querydict)
-
     return {'querydict': querydict, 'queryset':queryset}
 
 
@@ -199,7 +197,6 @@ def default_vista(user, queryset, defaults={}, settings={}):
             return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
         except Vista.DoesNotExist:
             print('Trying defaults from settings')
-            print('tp 224md50', defaults)
             return make_vista(
                 user,
                 queryset,
@@ -239,7 +236,7 @@ def make_vista_fields(model, field_names=[]):
             'type':type(model_field).__name__,
         }
 
-        if vista_fields[field_name]['type'] == 'ManyToManyRel':
+        if vista_fields[field_name]['type'] == 'ManyToManyField':
             vista_fields[field_name]['label'] = chained_label + model_field.related_model._meta.verbose_name.title()
             vista_fields[field_name]['queryset'] = model_field.related_model.objects.all()
             vista_fields[field_name]['available_for'] = [
@@ -369,6 +366,7 @@ def make_vista_fields(model, field_names=[]):
                         ('gt', 'greater than'),
                         ('lt', 'less than'),
                     ]
+
         if 'id' in vista_fields:
             del vista_fields['id']
 
@@ -414,7 +412,7 @@ def vista_context_data(settings, querydict):
     context_data['filter_fields_available'] = []
 
     for key, value in settings['fields'].items():
-        print('tp 224mh56', key)
+
         if 'fieldsearch' in value['available_for']:
             filter_field = {
                 'name': key,
@@ -424,7 +422,6 @@ def vista_context_data(settings, querydict):
 
             for subkey in ['type', 'queryset', 'choices', 'operators']:
                 if subkey in value:
-                    print('tp 224mh55', subkey, value[subkey])
                     filter_field[subkey] = value[subkey]
 
             if not 'operators' in filter_field:
