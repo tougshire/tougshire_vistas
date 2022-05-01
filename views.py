@@ -75,7 +75,10 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
                 queryset = queryset.filter(**built_query)
             except (ValueError, ValidationError) as e:
                 print('Error ', e.__class__.__name__,  e, 'for query: ', built_query)
-
+                queryset = queryset.model.objects.all()
+            except (FieldError, ValidationError) as e:
+                print('Error ', e.__class__.__name__,  e, 'for query: ', built_query)
+                queryset = queryset.model.objects.all()
         return queryset
 
     if vista_name == '':
