@@ -299,6 +299,7 @@ def make_vista_fields(model, field_names=[]):
                 'EmailField',
                 'SlugField',
                 'URLField',
+                'ImageField',
             ]:
                 vista_fields[field_name]['available_for'] = [
                     'quicksearch',
