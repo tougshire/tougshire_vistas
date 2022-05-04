@@ -326,12 +326,25 @@ def make_vista_fields(model, field_names=[]):
                     ('icontains', 'contains'),
                 ]
             elif vista_fields[field_name]['type'] in [
+                'BooleanField',
+            ]:
+                vista_fields[field_name]['available_for'] = [
+                    'fieldsearch',
+                ]
+                vista_fields[field_name]['operators'] = [
+                    ('exact','is'),
+                ]
+                vista_fields[field_name]['choices'] = [
+                    (True,"True"),
+                    (False,"False"),
+                ]
+
+            elif vista_fields[field_name]['type'] in [
                 'int',
                 'AutoField',
                 'BigAutoField',
                 'BigIntegerField',
                 'BinaryField',
-                'BooleanField',
                 'DecimalField',
                 'DurationField',
                 'FloatField',
