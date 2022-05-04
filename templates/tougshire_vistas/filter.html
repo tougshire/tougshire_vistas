@@ -4,7 +4,7 @@
 </script>
 <button type="button" id='btn_showvista' class="show" data-showtext="Show the Sort Filter Form" data-hidetext="Hide the Sort Filter Form">Show Sort/Filter form</button>
 <div id='div_vista'>
-  <form id="frm_vista" method="POST" >
+  <form id="frm_vista" method="POST">
     <div class="vista">
       {% csrf_token %}
       <div class="rowlabel">
@@ -136,6 +136,11 @@
     </div>
   </form>
   <script>
+    const regex = /(\?|\&)page=\d*/i;
+    document.getElementById('frm_vista').action = document.getElementById('frm_vista').action.replace(regex,'$1')
+  </script>
+
+    <script>
 
     function showFilterField(select) {
       let ctlNum = select.id.substring(19)
