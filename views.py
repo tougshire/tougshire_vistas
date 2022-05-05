@@ -424,7 +424,10 @@ def vista_context_data(settings, querydict):
 
     context_data={}
 
-    context_data['order_by_fields_available'] = [{ 'name':key, 'label':value['label'] } for key, value in settings['fields'].items() if 'order_by' in value['available_for'] ]
+    order_by_fields_forward = [{ 'name':key, 'label':value['label'] } for key, value in settings['fields'].items() if 'order_by' in value['available_for'] ]
+    order_by_fields_reverse = [{ 'name':'-' + key, 'label':'-' + value['label'] } for key, value in settings['fields'].items() if 'order_by' in value['available_for'] ]
+
+    context_data['order_by_fields_available'] = order_by_fields_forward + order_by_fields_reverse
 
     context_data['filter_fields_available'] = []
 
