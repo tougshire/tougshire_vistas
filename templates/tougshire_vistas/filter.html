@@ -102,7 +102,7 @@
         <input name="paginate_by" value="{{ paginate_by }}">
       </div>
 
-      <div class="rowlabel">
+      {% comment %} <div class="rowlabel">
         Show Fields
       </div>
       <div class="controlset value">
@@ -111,7 +111,7 @@
             <option value="{{ field.name }}"{% if field.name in show_columns %} selected="SELECTED" {% endif %}>{{ field.label }}</option>
           {% endfor %}
         </select>
-      </div>
+      </div> {% endcomment %}
     </div>
 
     <div class="vista">
