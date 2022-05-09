@@ -251,14 +251,10 @@ def make_vista_fields(model, field_names=[]):
                 ]
 
             try:
-                vista_fields[field_name]['label'] = chained_label + model_field.related_name.title()
+                vista_fields[field_name]['label'] = model_field.verbose_name.title()
             except AttributeError as e:
-                print('tp 224hc37', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
-                try:
-                    vista_fields[field_name]['label'] = model_field.verbose_name.title()
-                except AttributeError as e:
-                    print('tp 224hc38', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
-                    pass
+                print('tp 224hc38', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
+                pass
 
         elif vista_fields[field_name]['type'] == 'ManyToOneField':
             vista_fields[field_name]['label'] = chained_label + model_field.related_model._meta.verbose_name.title()
