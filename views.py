@@ -218,16 +218,17 @@ def make_vista_fields(model, field_names=[]):
         field_names = [ field.name for field in model._meta.get_fields() ]
 
     for field_name in field_names:
+        print('tp 2259h55',)
         chained_label = ''
         if '__' in field_name:
             chain_model = model
             chain = field_name.split('__')
             for l in range( len( chain ) -1 ):
                 try:
+                    print('tp 2259i03', chain[l])
                     chained_label = chained_label + chain_model._meta.get_field(chain[l]).verbose_name.title() + ' '
                 except AttributeError as e:
-                    chained_label = chained_label + chain_model._meta.get_field(chain[l]).related_name.title() + ' '
-                    pass
+                    chained_label = chained_label + chain_model._meta.get_field(chain[l]).name.title() + ' '
 
                 chain_model = apps.get_model(app_label=model._meta.app_label, model_name=chain_model._meta.get_field(chain[l]).related_model.__name__)
                 model_field = chain_model._meta.get_field(chain[l + 1])
