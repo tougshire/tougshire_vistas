@@ -10,7 +10,7 @@ This is not complete and it requires a lot from the view that contains it.  Docu
 
 Below is an example of a ListView which makes use of tougshire_vistas
 
-'''
+```
 class ItemList(ListView):
 
     model = Item
@@ -163,4 +163,4 @@ class ItemList(ListView):
         context_data['count'] = self.object_list.count()
 
         return context_data
-'''
+```
