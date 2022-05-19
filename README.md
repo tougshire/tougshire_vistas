@@ -8,7 +8,13 @@ This is not complete and it requires a lot from the view that contains it.  Docu
 
 ## Usage
 
-Below is an example of a ListView which makes use of tougshire_vistas
+In the list.html, you can include a sort/filter form with the following tag:
+```
+{% include 'tougshire_vistas/filter.html' %}
+```
+Or you can write your own
+
+The code for the view is more complex.  Below is an example of a ListView which makes use of tougshire_vistas
 
 ```
 class ItemList(ListView):
@@ -28,7 +34,6 @@ class ItemList(ListView):
         # which refers to the field "is_active" which is part of the Status class
         #
         self.vista_settings['fields'] = make_vista_fields(Item, field_names=[
-            'primary_id',
             'common_name',
             'mmodel',
             'network_name',
@@ -50,7 +55,20 @@ class ItemList(ListView):
             'connection__mmodel',
             'latest_inventory',
             'status__is_active',
+            'notes',
         ])
+
+        # Override the avaiable_for and label for fields as desired
+        # available_for can include: 'quicksearch', 'fieldsearch','order_by', and 'columns'
+        #    quicksearch: Included in a search that spans multiple fields looking for a single text string
+        #    fieldsearch: Included in a list of fields to search in which one field is chosen to be searched for a value
+        #    order_by: Included in a choice of fields for ordering
+        #    columns: Available to be displayed in the list view
+        #
+        # Tougshire_vistas will guess at what you want, for example, TextFields are searchable but not, by default, displayed in the results
+
+        self.vista_settings['fields']['notes']['available_for'].append('columns')
+        self.vista_settings['fields']['status__is_active']['label']='In Use'
 
         # Define the default view if, for example, you want users to be able to press a "default"
         # button on an HTML for and get this view, or have a view that comes up if no other views are saved
@@ -63,7 +81,7 @@ class ItemList(ListView):
             ('filter__fieldname__0', ['status__is_active']),
             ('filter__op__0', ['exact']),
             ('filter__value__0', [True]),
-            ('order_by', ['primary_id', 'common_name']),
+            ('order_by', ['common_name', 'serial_number',]),
             ('paginate_by',self.paginate_by),
         ],doseq=True) )
 
