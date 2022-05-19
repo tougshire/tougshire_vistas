@@ -31,7 +31,8 @@ class ItemList(ListView):
 
         # Define the fields that you want to be available to the view
         # This can include related fields such as 'status__is_active'
-        # which refers to the field "is_active" which is part of the Status class
+        # which, in this example, refers to a field named "is_active" which
+        # is part of the Status class which is related to Item by the ForeignKey "status"
         #
         self.vista_settings['fields'] = make_vista_fields(Item, field_names=[
             'common_name',
