@@ -72,7 +72,7 @@ class ItemList(ListView):
         self.vista_settings['fields']['status__is_active']['label']='In Use'
 
         # Define the default view if, for example, you want users to be able to press a "default"
-        # button on an HTML for and get this view, or have a view that comes up if no other views are saved
+        # button on an HTML form and get this view, or have a view that comes up if no other views are saved
         # Make sure the fields used here are also in the list of fields above
         # You can leave the trailing __0 out if you only have one fieldname / op / value set
         # but I haven't tested as much without the trailing __0 so it's probably best to leave it in
