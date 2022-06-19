@@ -464,6 +464,9 @@ def vista_context_data(settings, querydict):
     if 'order_by' in querydict:
         context_data['order_by'] = querydict.getlist('order_by')
 
+    if 'show_columns' in querydict:
+        context_data['show_columns'] = querydict.getlist('show_columns')
+
     if not 'order_by' in context_data:
         context_data['order_by'] = []
 

@@ -102,16 +102,16 @@
         <input name="paginate_by" value="{{ paginate_by }}">
       </div>
 
-      {% comment %} <div class="rowlabel">
-        Show Fields
+      <div class="rowlabel">
+        Show Columns
       </div>
       <div class="controlset value">
-        <select multiple="multiple" name="show_columns">
+        <select id="ctl_showcolumns" multiple="multiple" name="show_columns">
           {% for field in columns_available %}
             <option value="{{ field.name }}"{% if field.name in show_columns %} selected="SELECTED" {% endif %}>{{ field.label }}</option>
           {% endfor %}
         </select>
-      </div> {% endcomment %}
+      </div>
     </div>
 
     <div class="vista">
