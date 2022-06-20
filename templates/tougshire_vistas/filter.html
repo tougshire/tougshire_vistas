@@ -56,7 +56,6 @@
               {% endfor %}
             </select>
           </div>
-          <script>console.log("field.queryset={{ field.queryset }}");</script>
           {% if field.queryset %}
             <div id="div_filter__{{ field.name }}__{{ forloop.parentloop.counter0 }}" class="controlset filter__value" style="display:none">
               {% comment %} <input type="hidden" id="ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}" value="in"> {% endcomment %}
@@ -67,7 +66,6 @@
                 {% endfor %}
               </select>
             </div>
-            <script>console.log("field.choices={{ field.choices }}");</script>
             {% elif field.choices %}
             <div id="div_filter__{{ field.name }}__{{ forloop.parentloop.counter0 }}" class="controlset filter__value" style="display:none">
               {% comment %} <input type="hidden" id="ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}" value="in"> {% endcomment %}
