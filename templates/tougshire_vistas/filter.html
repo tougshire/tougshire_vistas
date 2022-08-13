@@ -4,7 +4,7 @@
 </script>
 <button type="button" id='btn_showvista' class="show" data-showtext="Show the Sort Filter Form" data-hidetext="Hide the Sort Filter Form">Show Sort/Filter form</button>
 <div id='div_vista'>
-  <form id="frm_vista" method="POST">
+  <form id="frm_vista" method="POST"{% if vista_form_action %} action="{{ vista_form_action }}"{% endif %}>
     <div class="vista">
       {% csrf_token %}
       <div class="rowlabel">
@@ -190,7 +190,7 @@
   </script>
 
   <h3>Default View</h3>
-  <form method="POST">
+  <form method="POST"{% if vista_form_action %} action="{{ vista_form_action }}"{% endif %}>
     <div class="vista">
       {% csrf_token %}
       <div class="rowlabel">
@@ -204,7 +204,7 @@
 
 
   <h3>Saved View</h3>
-  <form method="POST">
+  <form method="POST"{% if vista_form_action %} action="{{ vista_form_action }}"{% endif %} >
     <div class="vista">
       {% csrf_token %}
       <div class="rowlabel">
