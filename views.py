@@ -316,6 +316,7 @@ def make_vista_fields(model, field_names=[]):
                 vista_fields[field_name]['available_for'] = [
                     'quicksearch',
                     'fieldsearch',
+                    'columns',
                 ]
                 vista_fields[field_name]['operators'] = [
                     ('icontains', 'contains'),
@@ -325,6 +326,7 @@ def make_vista_fields(model, field_names=[]):
             ]:
                 vista_fields[field_name]['available_for'] = [
                     'fieldsearch',
+                    'columns',
                 ]
                 vista_fields[field_name]['operators'] = [
                     ('exact','is'),
