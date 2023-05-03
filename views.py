@@ -1,5 +1,5 @@
 import datetime
-
+import logging
 from inspect import currentframe, getframeinfo
 
 from django.apps import apps
@@ -10,7 +10,10 @@ from django.forms import ValidationError
 from django.http import QueryDict
 from django.shortcuts import render
 
+
 from .models import Vista
+
+logger = logging.getLogger(__name__)
 
 def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_default=False, settings = {}, do_save=True ):
 
@@ -74,10 +77,10 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
             try:
                 queryset = queryset.filter(**built_query)
             except (ValueError, ValidationError) as e:
-                print('Error ', e.__class__.__name__,  e, 'for query: ', built_query)
+                logger.warning('Error ', e.__class__.__name__,  e, 'for query: ', built_query)
                 queryset = queryset.model.objects.all()
             except (FieldError, ValidationError) as e:
-                print('Error ', e.__class__.__name__,  e, 'for query: ', built_query)
+                logger.warning('Error ', e.__class__.__name__,  e, 'for query: ', built_query)
                 queryset = queryset.model.objects.all()
         return queryset
 
@@ -121,15 +124,15 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
             try:
                 queryset = queryset.filter(text_query)
             except FieldError as e:
-                print('Field Error at Combined Text Query:', e)
-                print(text_query)
+                logger.warning('Field Error at Combined Text Query:', e)
+                logger.info('Text query is: ' + text_query)
 
     order_by = querydict.getlist('order_by')
 
     try:
         queryset = queryset.order_by(*order_by)
     except FieldError as e:
-        print('Field Error at Order By:', e)
+        logger.warning('Field Error at Order By:', e)
 
     queryset = queryset.distinct()
 
@@ -157,7 +160,7 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
 def get_latest_vista(user, queryset, defaults={}, settings={}):
     model_name = queryset.model._meta.label_lower
     try:
-        print('Trying to retrieve latest for user')
+        logger.info('Tougshire Vistas trying to retrieve latest for user')
         vista = Vista.objects.filter(user=user, model_name=model_name).latest('modified')
         return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
     except Vista.DoesNotExist:
@@ -190,16 +193,16 @@ def delete_vista(request):
 def default_vista(user, queryset, defaults={}, settings={}):
     model_name = queryset.model._meta.label_lower
     try:
-        print('Trying to retrieve latest is_default for user')
+        logger.info('Tougshire Vistas trying to retrieve latest is_default for user')
         vista = Vista.objects.filter(user=user, model_name=model_name, is_default=True).latest('modified')
         return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
     except Vista.DoesNotExist:
         try:
-            print('Trying to retrieve latest global_default')
+            logger.info('Tougshire Vistas trying to retrieve latest global_default')
             vista = Vista.objects.filter(model_name=model_name, is_global_default=True).latest('modified')
             return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
         except Vista.DoesNotExist:
-            print('Trying defaults from settings')
+            logger.info('Trying defaults from settings')
             return make_vista(
                 user,
                 queryset,
@@ -252,7 +255,7 @@ def make_vista_fields(model, field_names=[]):
             try:
                 vista_fields[field_name]['label'] = model_field.verbose_name.title()
             except AttributeError as e:
-                print('tp 224hc38', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
+                logger.warning('Error', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
                 pass
 
         elif vista_fields[field_name]['type'] == 'ManyToOneField':
@@ -269,7 +272,7 @@ def make_vista_fields(model, field_names=[]):
             try:
                 vista_fields[field_name]['label'] = chained_label + model_field.related_name.title()
             except AttributeError as e:
-                print('tp 224hc35', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
+                logger.error('Error', e, f"{getframeinfo(currentframe()).filename}:{getframeinfo(currentframe()).lineno}")
                 pass
 
         elif vista_fields[field_name]['type'] == 'ForeignKey':
