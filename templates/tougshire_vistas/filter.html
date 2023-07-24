@@ -2,7 +2,9 @@
   var max_search_keys = {% if max_search_keys %}{{ max_search_keys }}{% else %}5{% endif %}
 
 </script>
+{% if not hide_button %}
 <button type="button" id='btn_showvista' class="show" data-showtext="Show the Sort Filter Form" data-hidetext="Hide the Sort Filter Form">Show Sort/Filter form</button>
+{% endif %}
 <div id='div_vista'>
   <form id="frm_vista" method="POST"{% if vista_form_action %} action="{{ vista_form_action }}"{% endif %}>
     <div class="vista">
