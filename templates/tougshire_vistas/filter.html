@@ -191,19 +191,45 @@
     init_multiselect_container(document.getElementById('frm_vista'))
   </script>
 
-  <h3>Default View</h3>
-  <form method="POST"{% if vista_form_action %} action="{{ vista_form_action }}"{% endif %}>
+  {% if vista_default %}
+  <h3>Reset to Default</h3>
     <div class="vista">
-      {% csrf_token %}
       <div class="rowlabel">
-        Get Default
+        Reset to Default
       </div>
       <div class="controlset">
-        <button type="submit" name="default_vista" value='True'>Default</button>
+        <button type="button" id="btn_default">Reset</button>
       </div>
     </div>
   </form>
+  <script>
+    document.getElementById('btn_default').addEventListener('click', function(){
+      var vista_defaults = {{ vista_default|safe }}
+      console.log(vista_defaults)
+      for (x = 0; x < max_search_keys; x++) {
+        console.log(x)
+        if( document.getElementById('ctl_filter__field__' + x) !== null ) {
+          if ('filter__fieldname__' + x in vista_defaults) {
+            document.getElementById('ctl_filter__field__' + x).value = vista_defaults['filter__fieldname__' + x] 
+            document.getElementById('ctl_filter__op__' + vista_defaults['filter__fieldname__' + x] + '__' + x).value = vista_defaults['filter__op__' + x] 
+            document.getElementById('ctl_filter__value__' + vista_defaults['filter__fieldname__' + x] + '__' + x).value = vista_defaults['filter__value__' + x] 
+            document.getElementById('div_filter__' + vista_defaults['filter__fieldname__' + x] + '__' + x).style.display='block'            
+          }
+        }  
+      }
+      if('order_by' in vista_defaults) {
+        alert('order_by')
+        order_bys = document.getElementsByName('order_by')
+        for (x = 0; x < order_bys.length; x++) {
+          if(vista_defaults['order_by'][x]) {
+            order_bys[x].value = vista_defaults['order_by'][x]
+          }
+        }
+      }
+    })
+  </script>
 
+  {% endif %}
 
   <h3>Saved View</h3>
   <form method="POST"{% if vista_form_action %} action="{{ vista_form_action }}"{% endif %} >

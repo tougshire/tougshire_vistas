@@ -479,5 +479,4 @@ def vista_context_data(settings, querydict):
     if not 'combined_text_search' in context_data:
         context_data['combined_text_search'] = ''
 
-
     return context_data
