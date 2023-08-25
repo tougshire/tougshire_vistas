@@ -15,7 +15,7 @@ from .models import Vista
 
 logger = logging.getLogger(__name__)
 
-def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_default=False, settings = {}, do_save=True ):
+def make_vista(user, queryset, querydict=QueryDict(), vista_name='', settings = {}, do_save=True ):
 
     def make_type(field_name, field_value):
 
@@ -146,7 +146,6 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', make_defaul
         vista.name = vista_name
         vista.user = user
         vista.modified = datetime.date.today()
-        vista.is_default = make_default
         vista.filterstring = querydict.urlencode()
         vista.model_name = queryset.model._meta.label_lower
 
@@ -162,13 +161,13 @@ def get_latest_vista(user, queryset, defaults={}, settings={}):
     try:
         logger.info('Tougshire Vistas trying to retrieve latest for user')
         vista = Vista.objects.filter(user=user, model_name=model_name).latest('modified')
-        return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
+        return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, settings, True )
     except Vista.DoesNotExist:
         return default_vista( user, queryset, defaults, settings )
 
 
 # call this function in a try/except block to catch DoesNotExist.
-# def make_vista(user, queryset, querydict, vista_name='', make_default=False, settings = {} ):
+# def make_vista(user, queryset, querydict, vista_name='', settings = {} ):
 
 def retrieve_vista(user, queryset, model_name, vista_name, settings = {} ):
 
@@ -177,12 +176,7 @@ def retrieve_vista(user, queryset, model_name, vista_name, settings = {} ):
     except:
         vista = Vista.objects.all()
 
-    return make_vista(user, queryset, QueryDict(vista.filterstring), vista_name, False, settings, True )
-
-def get_global_vista(request, settings, queryset, defaults):
-
-    vista = Vista.objects.filter(is_global_default=True).latest('modified')
-    return make_vista(request, settings, queryset, defaults, vista)
+    return make_vista(user, queryset, QueryDict(vista.filterstring), vista_name, settings, True )
 
 # does not return anything.  Most likely you'll want to call get_latest_vista after calling this
 def delete_vista(request):
@@ -195,22 +189,16 @@ def default_vista(user, queryset, defaults={}, settings={}):
     try:
         logger.info('Tougshire Vistas trying to retrieve latest is_default for user')
         vista = Vista.objects.filter(user=user, model_name=model_name, is_default=True).latest('modified')
-        return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
+        return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, settings, True )
     except Vista.DoesNotExist:
-        try:
-            logger.info('Tougshire Vistas trying to retrieve latest global_default')
-            vista = Vista.objects.filter(model_name=model_name, is_global_default=True).latest('modified')
-            return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, False, settings, True )
-        except Vista.DoesNotExist:
-            logger.info('Trying defaults from settings')
-            return make_vista(
-                user,
-                queryset,
-                defaults,
-                '',
-                True,
-                settings
-            )
+        logger.info('Trying defaults from settings')
+        return make_vista(
+            user,
+            queryset,
+            defaults,
+            '',
+            settings
+        )
 
 
 def make_vista_fields(model, field_names=[]):

@@ -18,14 +18,6 @@ class Vista(models.Model):
         max_length=50,
         help_text="The name of the search"
     )
-    is_default = models.BooleanField(
-        default=False,
-        help_text='If this is a default'
-    )
-    is_global_default = models.BooleanField(
-        default=False,
-        help_text='If this is search is shared. 0 means no.  After that the highest number is the defacto defalt and others are not.  This should be set by admin'
-    )
     modified = models.DateTimeField(
         auto_now=True,
         help_text='The date this search was saved'
@@ -57,7 +49,7 @@ class Vista(models.Model):
         return '{} {}'.format(self.user, self.name)
 
     class Meta:
-        ordering = ['modified', 'user', 'is_default', 'is_global_default']
+        ordering = ['modified', 'user', 'name']
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'model_name', 'name'], name='unique_vista'

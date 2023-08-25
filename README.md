@@ -110,7 +110,6 @@ class ItemList(ListView):
                 queryset,
                 querydict,
                 '',
-                False,
                 self.vista_settings
             )
             del self.request.session['query']
@@ -122,7 +121,6 @@ class ItemList(ListView):
                 queryset,
                 self.request.POST,
                 self.request.POST.get('vista_name') if 'vista_name' in self.request.POST else '',
-                self.request.POST.get('make_default') if ('make_default') in self.request.POST else False,
                 self.vista_settings
             )
         elif 'retrieve_vista' in self.request.POST:
@@ -134,14 +132,6 @@ class ItemList(ListView):
                 self.request.POST.get('vista_name'),
                 self.vista_settings
 
-            )
-        elif 'default_vista' in self.request.POST:
-
-            self.vistaobj = default_vista(
-                self.request.user,
-                queryset,
-                self.vista_defaults,
-                self.vista_settings
             )
         else:
             self.vistaobj = get_latest_vista(
