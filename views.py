@@ -16,9 +16,8 @@ from .models import Vista
 logger = logging.getLogger(__name__)
 
 def make_vista(user, queryset, querydict=QueryDict(), vista_name='', settings = {}, do_save=True ):
-
+    
     def make_type(field_name, field_value):
-
         try:
             field_type = settings['fields'][field_name]['type']
         except KeyError:
@@ -50,7 +49,6 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', settings = 
 
 
     def queryset_filter(queryset, querydict, indx = None):
-
         fieldnamekey = 'filter__fieldname'
         opkey = 'filter__op'
         valuekey = 'filter__value'
@@ -159,7 +157,7 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', settings = 
 def get_latest_vista(user, queryset, defaults={}, settings={}):
     model_name = queryset.model._meta.label_lower
     try:
-        logger.info('Tougshire Vistas trying to retrieve latest for user')
+        logger.info('Tougshire Vistas is trying to retrieve latest for user')
         vista = Vista.objects.filter(user=user, model_name=model_name).latest('modified')
         return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, settings, True )
     except Vista.DoesNotExist:

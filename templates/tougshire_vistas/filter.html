@@ -1,47 +1,39 @@
 <script>
   var max_search_keys = {% if max_search_keys %}{{ max_search_keys }}{% else %}5{% endif %}
 </script>
-{% if not hide_button %}
-<button type="button" id='btn_showvista' class="show" data-showtext="Show the Sort Filter Form" data-hidetext="Hide the Sort Filter Form">Show Sort/Filter form</button>
-{% endif %}
-<div id='div_vista'>
-  <form id="frm_vista" method="POST"{% if vista_form_action %} action="{{ vista_form_action }}"{% endif %}>
-    <div class="vista">
-      {% csrf_token %}
-      <div class="rowlabel">
-        Sort By
+<form id="frm_vista" method="POST"{% if vista_form_action %} action="{{ vista_form_action }}"{% endif %}>
+  {% csrf_token %}
+  <div id='div_vistashort'>
+    <div class="vistagroup">
+      <div class="vistagrouplabel">
+        Text Search
       </div>
-      <div class="controlset">
-        <select name="order_by">
-          {% for field in order_by_fields_available %}
-            <option value="{{ field.name }}"{% if order_by.0 == field.name %} selected="SELECTED" {% endif %}>{{ field.label }}</option>
-          {% endfor %}
-        </select>
-        <select name="order_by">
-          {% for field in order_by_fields_available %}
-            <option value="{{ field.name }}"{% if order_by.1 == field.name %} selected="SELECTED" {% endif %}>{{ field.label }}</option>
-          {% endfor %}
-        </select>
-        <select name="order_by">
-          {% for field in order_by_fields_available %}
-            <option value="{{ field.name }}"{% if order_by.2 == field.name %} selected="SELECTED" {% endif %}>{{ field.label }}</option>
-          {% endfor %}
-        </select>
+      <div class="vistacluster">
+        <div class="vistaset">
+          <input id="ctl_combined_text_search" name="combined_text_search" value="{{ combined_text_search }}">
+        </div>
+        <div class="vistaset">
+          <button type="submit" id="btn_vista_query_submitted" name="vista_query_submitted" value='True'>Search</button>
+        </div>
+        <div class="vistaset">
+          <label for="btn_showvista">Advanced Search:</label>
+          <button type='button' id='btn_showvista' class="show" data-showtext="Show Advanced" data-hidetext="Hide Advanced">Show Advanced</button>
+          <button type='button' id='btn_default'>Reset to Default</button>
+        </div>
+
       </div>
-      <div class="rowlabel">
-        Quick Search
-      </div>
-      <div class="controlset">
-        <input id="ctl_combined_text_search" name="combined_text_search" value="{{ combined_text_search }}">
+      <div class="vistahelp">
+        Text search is affected by advanced search settings
       </div>
     </div>
+  </div>
+  <div id='div_vistaadvanced'>
     {% for filterset in filter %}
-
-      <div id="div_fieldsearch__{{ forloop.counter0 }}" class="vista fieldsearch">
-        <div class="rowlabel">
+      <div id="div_fieldsearch__{{ forloop.counter0 }}" class="vistagroup fieldsearch">
+        <div class="vistagrouplabel">
           Field Search
         </div>
-        <div class="controlset filterselectfield">
+        <div class="vistacluster filterselectfield">
           <select id="ctl_filter__field__{{ forloop.counter0 }}" name="filter__fieldname__{{ forloop.counter0 }}" autocomplete="off">
             <option value="">---</option>
             {% for field in filter_fields_available %}
@@ -93,18 +85,43 @@
       </div>
     {% endfor %}
 
-    <div class="vista">
-      <div class="rowlabel">
-        Paginate By
+
+
+    <div class="vistagroup">
+      <div class="vistagrouplabel">
+        Order By
       </div>
-      <div class="controlset value">
+      <div class="vistacluster">
+        <select name="order_by">
+          {% for field in order_by_fields_available %}
+            <option value="{{ field.name }}"{% if order_by.0 == field.name %} selected="SELECTED" {% endif %}>{{ field.label }}</option>
+          {% endfor %}
+        </select>
+        <select name="order_by">
+          {% for field in order_by_fields_available %}
+            <option value="{{ field.name }}"{% if order_by.1 == field.name %} selected="SELECTED" {% endif %}>{{ field.label }}</option>
+          {% endfor %}
+        </select>
+        <select name="order_by">
+          {% for field in order_by_fields_available %}
+            <option value="{{ field.name }}"{% if order_by.2 == field.name %} selected="SELECTED" {% endif %}>{{ field.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="vistagroup">
+      <div class="vistagrouplabel">
+        Rows per page
+      </div>
+      <div class="vistacluster">
         <input name="paginate_by" value="{{ paginate_by }}">
       </div>
-
-      <div class="rowlabel">
-        Show Columns
+    </div>
+    <div class="vistagroup">
+      <div class="vistagrouplabel">
+        Visible Columns
       </div>
-      <div class="controlset value">
+      <div class="vistacluster">
         <select id="ctl_showcolumns" multiple="multiple" name="show_columns">
           {% for field in columns_available %}
             <option value="{{ field.name }}"{% if field.name in show_columns %} selected="SELECTED" {% endif %}>{{ field.label }}</option>
@@ -112,125 +129,158 @@
         </select>
       </div>
     </div>
-
-    <div class="vista">
-      <div class="rowlabel">
-        &nbsp;
+    <div class="vistagroup">
+      <div class="vistagrouplabel">
+        Save View As
       </div>
-      <div class="controlset">
-        <button type="submit" id="btn_vista_query_submitted" name="vista_query_submitted" value='True'>Search</button>
-      </div>
-      <div class="help_text">
-        &nbsp;
+      <div class="vistacluster">
+        <input name="vista_name" value="" form="frm_vista">
       </div>
     </div>
-  </form>
-
-  <script>
-    const regex = /(\?|\&)page=\d*/i;
-    document.getElementById('frm_vista').action = document.getElementById('frm_vista').action.replace(regex,'$1')
-  </script>
-
-    <script>
-
-    function showFilterField(select) {
-      let ctlNum = select.id.substring(19)
-      let val_control
-      for(opt of select.options) {
-        if(opt.value){
-          /* hide all of the value and op controls */
-          document.getElementById('div_filter__' + opt.value + '__' + ctlNum ).style.display="none"
-          /* remove the names so they don't get submitted with the form */
-          document.getElementById('ctl_filter__op__' + opt.value + '__' + ctlNum ).removeAttribute('name')
-          val_control = document.getElementById('ctl_filter__value__' + opt.value + '__' + ctlNum )
-          val_control.removeAttribute('name')
-          if( val_control.dataset.siblings ) {
-            for(i=0; i < (val_control.dataset.siblings); i++) {
-              document.getElementById('ctl_filter__value__' + opt.value + '__' + ctlNum + '__' + i ).removeAttribute('name')
-            }
-          }
-        }
-      }
-      if(select.value) {
-        /*re-show and re-name the value and op controls that match what is selected */ 
-        select.classList.remove('grayedout')
-        select.name="filter__fieldname__" + ctlNum
-        document.getElementById('div_filter__' + select.value  + '__' + ctlNum ).style.display="block"
-        document.getElementById('ctl_filter__op__' + select.value + '__' + ctlNum ).name="filter__op__" + ctlNum
-        val_control = document.getElementById('ctl_filter__value__' + select.value + '__' + ctlNum )
-        val_control.name="filter__value__" + ctlNum
-        if( val_control.dataset.siblings ) {
-          for(i=0; i < (val_control.dataset.siblings); i++) {
-            document.getElementById('ctl_filter__value__' + select.value + '__' + ctlNum + '__' + i ).name="filter__value__" + ctlNum
-          }
-        }
-      } else {
-        select.removeAttribute("name")
-      }
-    }
-    for( ctlNum = 0; ctlNum < max_search_keys; ctlNum++ ) {
-      document.getElementById('ctl_filter__field__' + ctlNum).addEventListener('change', function(e) {
-        showFilterField(e.target)
-      })
-      showFilterField(document.getElementById('ctl_filter__field__' + ctlNum))
-      if( ctlNum < max_search_keys - 1) {
-          let localCtlNum = ctlNum
-        document.getElementById('div_fieldsearch__' + ctlNum).addEventListener('click', function() {
-          document.getElementById('div_fieldsearch__' + ( localCtlNum + 1 )).style.removeProperty('display')
-        })
-      }
-    }
-  </script>
-  <script>
-    init_multiselect_container(document.getElementById('frm_vista'))
-  </script>
-
-  {% if vista_default %}
-  <h3>Default View</h3>
-    <div class="vista">
-      <div class="rowlabel">
-        Load Default Parameters
+    <div class="vistagroup">
+      <div class="vistagrouplabel">
+        &nbsp;
       </div>
-      <div class="controlset">
-        <button type="button" id="btn_default">Default</button>
+      <div class="vistacluster">
+        <button type="submit" id="btn_vista_query_submitted_2" name="vista_query_submitted" value='True'>Search</button>
       </div>
     </div>
-  </form>
-  <script>
-    document.getElementById('btn_default').addEventListener('click', function(){
-      var vista_defaults = {{ vista_default|safe }}
+  </div>
+</form>
+<form method="POST"{% if vista_form_action %} action="{{ vista_form_action }}"{% endif %} >
+  <div id="div_vistasaved">
+    <div class="vistagroup">
+      {% csrf_token %}
+      <div class="vistagrouplabel">
+        Get Saved View
+      </div>
+      <div class="vistacluster">
+        <select name="vista_name">
+          <option value=''>-----</option>
+          {% for vista in vistas%}
+            <option value="{{ vista.name }}">{{ vista.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" name="retrieve_vista" value="retrieve_vista">Get</button>
+        <button type="submit" name="delete_vista" value="delete">Delete</button>
+      </div>
+    </div>
+  </div>
+</form>
 
-      for (x = 0; x < max_search_keys; x++) {
-        if( document.getElementById('ctl_filter__field__' + x) !== null ) {
-          if ('filter__fieldname__' + x in vista_defaults) {
-            fieldSelecter = document.getElementById('ctl_filter__field__' + x)
-            fieldSelecter.value = vista_defaults['filter__fieldname__' + x]
-            fieldSelecter.dispatchEvent(new Event('change'))
-            valueControl_id = 'ctl_filter__value__' + vista_defaults['filter__fieldname__' + x] + '__' + x
-            valueControl = document.getElementById(valueControl_id)
-            if (valueControl.tagName == 'SELECT' ) {              
-              opts = valueControl.options
-              for(o = 0; o < opts.length; o++) {
-                if(opts[o].value in vista_defaults['filter__value__' + x] || opts[o].value == vista_defaults['filter__value__' + x]) {
-                  opts[o].setAttribute('selected', 'selected')
-                }
+
+
+<script>
+  document.getElementById('btn_showvista').addEventListener('click', function(e){
+    e.preventDefault
+    toggleVisibility('div_vistaadvanced', 'btn_showvista')
+    toggleVisibility('div_vistasaved')
+    toggleVisibility('btn_vista_query_submitted')
+
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if(e.ctrlKey) {
+      if(e.shiftKey) {
+        if(e.which==70) {
+          e.preventDefault();
+           toggleVisibility('div_vistaavanced', 'btn_showvista')
+           toggleVisibility('div_vistasaved')
+           toggleVisibility('btn_vista_query_submitted')
+        }
+      }
+    }
+  });
+  toggleVisibility('div_vistaadvanced', 'btn_showvista', 0 )
+  toggleVisibility('div_vistasaved', '', 0 )
+  toggleVisibility('btn_vista_query_submitted', '', 1)
+
+
+</script>
+<script>
+function showFilterField(select) {
+  let ctlNum = select.id.substring(19)
+  let val_control
+  for(opt of select.options) {
+    if(opt.value){
+      /* hide all of the value and op controls */
+      document.getElementById('div_filter__' + opt.value + '__' + ctlNum ).style.display="none"
+      /* remove the names so they don't get submitted with the form */
+      document.getElementById('ctl_filter__op__' + opt.value + '__' + ctlNum ).removeAttribute('name')
+      val_control = document.getElementById('ctl_filter__value__' + opt.value + '__' + ctlNum )
+      val_control.removeAttribute('name')
+      if( val_control.dataset.siblings ) {
+        for(i=0; i < (val_control.dataset.siblings); i++) {
+          document.getElementById('ctl_filter__value__' + opt.value + '__' + ctlNum + '__' + i ).removeAttribute('name')
+        }
+      }
+    }
+  }
+  if(select.value) {
+    /*re-show and re-name the value and op controls that match what is selected */ 
+    select.classList.remove('grayedout')
+    select.name="filter__fieldname__" + ctlNum
+    document.getElementById('div_filter__' + select.value  + '__' + ctlNum ).style.display="block"
+    document.getElementById('ctl_filter__op__' + select.value + '__' + ctlNum ).name="filter__op__" + ctlNum
+    val_control = document.getElementById('ctl_filter__value__' + select.value + '__' + ctlNum )
+    val_control.name="filter__value__" + ctlNum
+    if( val_control.dataset.siblings ) {
+      for(i=0; i < (val_control.dataset.siblings); i++) {
+        document.getElementById('ctl_filter__value__' + select.value + '__' + ctlNum + '__' + i ).name="filter__value__" + ctlNum
+      }
+    }
+  } else {
+    select.removeAttribute("name")
+  }
+}
+for( ctlNum = 0; ctlNum < max_search_keys; ctlNum++ ) {
+  document.getElementById('ctl_filter__field__' + ctlNum).addEventListener('change', function(e) {
+    showFilterField(e.target)
+  })
+  showFilterField(document.getElementById('ctl_filter__field__' + ctlNum))
+  if( ctlNum < max_search_keys - 1) {
+      let localCtlNum = ctlNum
+    document.getElementById('div_fieldsearch__' + ctlNum).addEventListener('click', function() {
+      document.getElementById('div_fieldsearch__' + ( localCtlNum + 1 )).style.removeProperty('display')
+    })
+  }
+}
+</script>
+<script>
+init_multiselect_container(document.getElementById('frm_vista'))
+</script>
+<script>
+  document.getElementById('btn_default').addEventListener('click', function(){
+    var vista_defaults = {{ vista_default|safe }}
+
+    for (x = 0; x < max_search_keys; x++) {
+      if( document.getElementById('ctl_filter__field__' + x) !== null ) {
+        if ('filter__fieldname__' + x in vista_defaults) {
+          fieldSelecter = document.getElementById('ctl_filter__field__' + x)
+          fieldSelecter.value = vista_defaults['filter__fieldname__' + x]
+          fieldSelecter.dispatchEvent(new Event('change'))
+          valueControl_id = 'ctl_filter__value__' + vista_defaults['filter__fieldname__' + x] + '__' + x
+          valueControl = document.getElementById(valueControl_id)
+          if (valueControl.tagName == 'SELECT' ) {              
+            opts = valueControl.options
+            for(o = 0; o < opts.length; o++) {
+              if(opts[o].value in vista_defaults['filter__value__' + x] || opts[o].value == vista_defaults['filter__value__' + x]) {
+                opts[o].setAttribute('selected', 'selected')
               }
-
-              fieldSelecter.dispatchEvent(new Event('change'))
-              valueDisplay_id = 'ctl_multiselectdisplay_' + valueControl_id
-              valueDisplay = document.getElementById(valueDisplay_id)
-              valueDisplay.dispatchEvent(new Event('click'))
-            } else {
-              valueControl.value = vista_defaults['filter__value__' + x] 
             }
+
+            fieldSelecter.dispatchEvent(new Event('change'))
+            valueDisplay_id = 'ctl_multiselectdisplay_' + valueControl_id
+            valueDisplay = document.getElementById(valueDisplay_id)
+            valueDisplay.dispatchEvent(new Event('click'))
+          } else {
+            valueControl.value = vista_defaults['filter__value__' + x] 
           }
+        }
 
-        }  
-
-//        document.getElementById('ctl_multiselectdisplay_' + multiSelect.id).dispatchEvent(new Event('focus'), {bubbles: true})
-        document.getElementById('frm_vista').dispatchEvent(new Event('click', {bubbles: true}))
+      }  
+      document.getElementById('frm_vista').dispatchEvent(new Event('click', {bubbles: true}))
       }
-//      hide_multiselects(document.getElementById('frm_vista'))
       if('order_by' in vista_defaults) {
         order_bys = document.getElementsByName('order_by')
         for (x = 0; x < order_bys.length; x++) {
@@ -241,51 +291,7 @@
       }
     })
   </script>
-
-  {% endif %}
-
-  <h3>Save View</h3>
-  <div class="vista">
-    <div class="rowlabel">
-      Name
-    </div>
-    <div class="controlset">
-      <input name="vista_name" value="" form="frm_vista">
-    </div>
-    <div class="rowlabel">
-      &nbsp;
-    </div>
-    <div class="controlset">
-      <button type="submit" id="btn_vista_query_submitted" name="vista_query_submitted" value='True' form="frm_vista">Save</button>
-    </div>
-    <div class="help_text">
-      &nbsp;
-    </div>
-  </div>
-
-  <h3>Saved Views</h3>
-  <form method="POST"{% if vista_form_action %} action="{{ vista_form_action }}"{% endif %} >
-    <div class="vista">
-      {% csrf_token %}
-      <div class="rowlabel">
-        Get Saved View
-      </div>
-      <div class="controlset">
-        <select name="vista_name">
-          <option value=''>-----</option>
-          {% for vista in vistas%}
-            <option value="{{ vista.name }}">{{ vista.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="rowlabel">
-        Action
-      </div>
-      <div class="controlset">
-        <button type="submit" name="retrieve_vista" value="retrieve_vista">Get</button>
-        <button type="submit" name="delete_vista" value="delete">Delete</button>
-      </div>
-    </div>
-  </form>
-  <h3>List</h3>
-</div>
+  <script>
+    const regex = /(\?|\&)page=\d*/i;
+    document.getElementById('frm_vista').action = document.getElementById('frm_vista').action.replace(regex,'$1')
+  </script>

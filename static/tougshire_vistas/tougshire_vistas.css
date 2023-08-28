@@ -1,0 +1,46 @@
+.vistagroup, .vistacluster, .vistaset, .vistagrouplabel {
+    display:flex;
+    margin-right:1em;
+    flex-wrap: wrap;
+}
+.vistagrouplabel {
+    min-width:16em;
+}
+.vistahelp {
+    flex-basis: 80%;
+    margin-left:3%;
+    font-size:.8em;
+}
+/*
+.vista {
+    display:grid;
+    grid-template-columns:1fr 2fr 1fr 1fr;
+}
+
+.vista .control {
+    display:flex;
+}
+
+.vista .rowlabel {
+    grid-row: auto;
+    grid-column: 1 / span 1
+}
+
+.vista .controlset {
+    grid-column: auto / span 1;
+    grid-row: auto;
+    display:flex;
+}
+
+.vista .help_text {
+    margin-left:15%;
+}
+
+.vista .viewformset {
+    margin-left:2em;
+}
+
+.vista .control {
+    display:flex;
+}
+*/

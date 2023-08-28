@@ -131,3 +131,4 @@ dmypy.json
 # vi
 *.sw[op]
 
+templates/tougshire_vistas/filter_238rd25.html
