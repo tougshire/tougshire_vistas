@@ -13,12 +13,9 @@
           <input id="ctl_combined_text_search" name="combined_text_search" value="{{ combined_text_search }}">
         </div>
         <div class="vistaset">
-          <button type="submit" id="btn_vista_query_submitted" name="vista_query_submitted" value='True'>Search</button>
-        </div>
-        <div class="vistaset">
-          <label for="btn_showvista">Advanced Search:</label>
-          <button type='button' id='btn_showvista' class="show" data-showtext="Show Advanced" data-hidetext="Hide Advanced">Show Advanced</button>
-          <button type='button' id='btn_default'>Reset to Default</button>
+          <button type="submit" id="btn_vista_default" name="vista_default" value='True'>Search with Default Settings</button>
+          <button type="submit" id="btn_vista_advanced" name="vista_advanced" value='True'>Search with Advanced Settings</button>
+          <button type='button' id='btn_showvista' class="show" data-showtext="Show Advanced Settings" data-hidetext="Hide Advanced Settings">Show Advanced Settings</button>
         </div>
 
       </div>
@@ -142,7 +139,7 @@
         &nbsp;
       </div>
       <div class="vistacluster">
-        <button type="submit" id="btn_vista_query_submitted_2" name="vista_query_submitted" value='True'>Search</button>
+        <button type="submit" id="btn_vista_advanced_2" name="vista_advanced" value='True'>Search</button>
       </div>
     </div>
   </div>
@@ -175,7 +172,7 @@
     e.preventDefault
     toggleVisibility('div_vistaadvanced', 'btn_showvista')
     toggleVisibility('div_vistasaved')
-    toggleVisibility('btn_vista_query_submitted')
+//    toggleVisibility('btn_vista_advanced')
 
   });
 
@@ -186,14 +183,14 @@
           e.preventDefault();
            toggleVisibility('div_vistaavanced', 'btn_showvista')
            toggleVisibility('div_vistasaved')
-           toggleVisibility('btn_vista_query_submitted')
+           toggleVisibility('btn_vista_advances')
         }
       }
     }
   });
   toggleVisibility('div_vistaadvanced', 'btn_showvista', 0 )
   toggleVisibility('div_vistasaved', '', 0 )
-  toggleVisibility('btn_vista_query_submitted', '', 1)
+//  toggleVisibility('btn_vista_advanced', '', 1)
 
 
 </script>
@@ -251,6 +248,7 @@ init_multiselect_container(document.getElementById('frm_vista'))
 </script>
 <script>
   document.getElementById('btn_default').addEventListener('click', function(){
+
     var vista_defaults = {{ vista_default|safe }}
 
     for (x = 0; x < max_search_keys; x++) {

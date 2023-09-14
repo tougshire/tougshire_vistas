@@ -15,7 +15,7 @@ from .models import Vista
 
 logger = logging.getLogger(__name__)
 
-def make_vista(user, queryset, querydict=QueryDict(), vista_name='', settings = {}, do_save=True ):
+def make_vista(user, queryset, querydict_use=QueryDict(), querydict_remember=QueryDict(), vista_name='', settings = {}, do_save=True ):
     
     def make_type(field_name, field_value):
         try:
@@ -83,13 +83,15 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', settings = 
         return queryset
 
     if vista_name == '':
-        vista_name = querydict.get('vista_name')
+        vista_name = querydict_use.get('vista_name')
         if vista_name is None:
             vista_name = ''
 
+    if querydict_remember == {}:
+        querydict_remember = querydict_use
 
-    if 'filter__fieldname' in querydict and 'filter__op' in querydict:
-        queryset = queryset_filter(queryset, querydict)
+    if 'filter__fieldname' in querydict_use and 'filter__op' in querydict_use:
+        queryset = queryset_filter(queryset, querydict_use)
 
 
     max_search_keys=10
@@ -98,18 +100,18 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', settings = 
 
 
     for indx in range(max_search_keys):
-        if 'filter__fieldname__' + str(indx) in querydict and 'filter__op__' + str(indx) in querydict:
-            queryset = queryset_filter(queryset, querydict, indx)
+        if 'filter__fieldname__' + str(indx) in querydict_use and 'filter__op__' + str(indx) in querydict_use:
+            queryset = queryset_filter(queryset, querydict_use, indx)
 
-    if 'combined_text_search' in querydict and querydict.get('combined_text_search') > '':
+    if 'combined_text_search' in querydict_use and querydict_use.get('combined_text_search') > '':
 
         text_query = None
         text_fields_available = [ key for key, value in settings['fields'].items() if 'available_for' in value and 'quicksearch' in value['available_for']]
 
         if text_fields_available > []:
-            combined_text_search = querydict.get('combined_text_search')
+            combined_text_search = querydict_use.get('combined_text_search')
             combined_text_fields = text_fields_available
-            if 'combined_text_fields' in querydict and querydict.getlist('combined_text_fields'):
+            if 'combined_text_fields' in querydict_use and querydict_use.getlist('combined_text_fields'):
                 combined_text_fields = list(set(combined_text_fields).intersection(settings['text_fields_avaiable']))
 
             for fieldname in combined_text_fields:
@@ -125,7 +127,7 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', settings = 
                 logger.warning('Field Error at Combined Text Query:', e)
                 logger.info('Text query is: ' + text_query)
 
-    order_by = querydict.getlist('order_by')
+    order_by = querydict_use.getlist('order_by')
 
     try:
         queryset = queryset.order_by(*order_by)
@@ -144,12 +146,12 @@ def make_vista(user, queryset, querydict=QueryDict(), vista_name='', settings = 
         vista.name = vista_name
         vista.user = user
         vista.modified = datetime.date.today()
-        vista.filterstring = querydict.urlencode()
+        vista.filterstring = querydict_use.urlencode()
         vista.model_name = queryset.model._meta.label_lower
 
         vista.save()
 
-    return {'querydict': querydict, 'queryset':queryset}
+    return {'querydict': querydict_remember, 'queryset':queryset}
 
 
 # call this function in a try/except block to catch DoesNotExist.
@@ -183,20 +185,14 @@ def delete_vista(request):
     vista = Vista.objects.filter(name=vista_name, user=request.user).delete()
 
 def default_vista(user, queryset, defaults={}, settings={}):
-    model_name = queryset.model._meta.label_lower
-    try:
-        logger.info('Tougshire Vistas trying to retrieve latest is_default for user')
-        vista = Vista.objects.filter(user=user, model_name=model_name, is_default=True).latest('modified')
-        return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, settings, True )
-    except Vista.DoesNotExist:
-        logger.info('Trying defaults from settings')
-        return make_vista(
-            user,
-            queryset,
-            defaults,
-            '',
-            settings
-        )
+    return make_vista(
+        user,
+        queryset,
+        defaults,
+        '',
+        settings,
+        False
+    )
 
 
 def make_vista_fields(model, field_names=[]):
