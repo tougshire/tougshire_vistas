@@ -98,50 +98,7 @@ class ItemList(ListView):
 
         self.vistaobj = {'querydict':QueryDict(), 'queryset':queryset}
 
-        # Figure out what functon the user wants and return the appropriate value
-        #
-        if 'delete_vista' in self.request.POST:
-            delete_vista(self.request)
-
-        if 'query' in self.request.session:
-            querydict = QueryDict(self.request.session.get('query'))
-            self.vistaobj = make_vista(
-                self.request.user,
-                queryset,
-                querydict,
-                '',
-                self.vista_settings
-            )
-            del self.request.session['query']
-
-        elif 'vista_query_submitted' in self.request.POST:
-
-            self.vistaobj = make_vista(
-                self.request.user,
-                queryset,
-                self.request.POST,
-                self.request.POST.get('vista_name') if 'vista_name' in self.request.POST else '',
-                self.vista_settings
-            )
-        elif 'retrieve_vista' in self.request.POST:
-
-            self.vistaobj = retrieve_vista(
-                self.request.user,
-                queryset,
-                'libtekin.item',
-                self.request.POST.get('vista_name'),
-                self.vista_settings
-
-            )
-        else:
-            self.vistaobj = get_latest_vista(
-                self.request.user,
-                queryset,
-                self.vista_defaults,
-                self.vista_settings
-            )
-
-        return self.vistaobj['queryset']
+        return get_vista_queryset( self )
 
     def get_paginate_by(self, queryset):
 

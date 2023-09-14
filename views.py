@@ -15,6 +15,75 @@ from .models import Vista
 
 logger = logging.getLogger(__name__)
 
+def get_vista_queryset( view ):
+
+    if 'delete_vista' in view.request.POST:
+        delete_vista(view.request)
+
+    if 'query' in view.request.session:
+        querydict = QueryDict(view.request.session.get('query'))
+        view.vistaobj = make_vista(
+            view.request.user,
+            view.vista_obj.queryset,
+            querydict,
+            {},
+            '',
+            view.vista_settings
+        )
+        del view.request.session['query']
+
+    elif 'vista_default' in view.request.POST:
+
+        view.vista_defaults['combined_text_search'] = view.request.POST['combined_text_search']
+            
+        view.vistaobj = make_vista(
+            view.request.user,
+            view.vistaobj['queryset'],
+            view.vista_defaults,
+            view.request.POST,
+            '',
+            view.vista_settings,
+            False,
+        )
+
+    elif 'vista_advanced' in view.request.POST:
+        
+        view.vistaobj = make_vista(
+            view.request.user,
+            view.vistaobj['queryset'],
+            view.request.POST,
+            {},
+            view.request.POST.get('vista_name') if 'vista_name' in view.request.POST else '',
+            view.vista_settings,
+            True,
+        )
+    elif hasattr(view,'vista_get_by'):
+        view.vistaobj = make_vista(
+            view.request.user,
+            view.vistaobj['queryset'],
+            view.vista_get_by,
+            view.vista_settings
+        )
+    elif 'retrieve_vista' in view.request.POST:
+
+        view.vistaobj = retrieve_vista(
+            view.request.user,
+            view.vistaobj['queryset'],
+            'sdcpeople.person',
+            view.request.POST.get('vista_name'),
+            view.vista_settings
+
+        )
+    else:
+        view.vistaobj = get_latest_vista(
+            view.request.user,
+            view.vistaobj['queryset'],
+            view.vista_defaults,
+            view.vista_settings
+        )
+
+    return view.vistaobj['queryset']
+
 def make_vista(user, queryset, querydict_use=QueryDict(), querydict_remember=QueryDict(), vista_name='', settings = {}, do_save=True ):
     
     def make_type(field_name, field_value):
@@ -161,7 +230,7 @@ def get_latest_vista(user, queryset, defaults={}, settings={}):
     try:
         logger.info('Tougshire Vistas is trying to retrieve latest for user')
         vista = Vista.objects.filter(user=user, model_name=model_name).latest('modified')
-        return make_vista(user, queryset, QueryDict(vista.filterstring), vista.name, settings, True )
+        return make_vista(user,queryset, QueryDict(vista.filterstring), {}, vista.name, settings, True)
     except Vista.DoesNotExist:
         return default_vista( user, queryset, defaults, settings )
 
