@@ -258,6 +258,7 @@ def default_vista(user, queryset, defaults={}, settings={}):
         user,
         queryset,
         defaults,
+        {},
         '',
         settings,
         False

@@ -82,7 +82,7 @@ class ItemList(ListView):
             ('filter__value__0', [True]),
             ('order_by', ['common_name', 'serial_number',]),
             ('paginate_by',self.paginate_by),
-        ],doseq=True) )
+        ],doseq=True), mutable=True )
 
         return super().setup(request, *args, **kwargs)
 
