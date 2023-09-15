@@ -47,7 +47,7 @@ def get_vista_queryset( view ):
         )
 
     elif 'vista_advanced' in view.request.POST:
-        
+ 
         view.vistaobj = make_vista(
             view.request.user,
             view.vistaobj['queryset'],
@@ -75,12 +75,13 @@ def get_vista_queryset( view ):
 
         )
     else:
-        view.vistaobj = get_latest_vista(
-            view.request.user,
-            view.vistaobj['queryset'],
-            view.vista_defaults,
-            view.vista_settings
-        )
+        if view.request.user.is_authenticated:
+            view.vistaobj = get_latest_vista(
+                view.request.user,
+                view.vistaobj['queryset'],
+                view.vista_defaults,
+                view.vista_settings
+            )
 
     return view.vistaobj['queryset']
 
@@ -206,19 +207,20 @@ def make_vista(user, queryset, querydict_use=QueryDict(), querydict_remember=Que
     queryset = queryset.distinct()
 
     if do_save:
-        try:
-            vista, created = Vista.objects.get_or_create(name=vista_name, user=user)
-        except Vista.MultipleObjectsReturned:
-            vista = Vista.objects.filter(name=vista_name, user=user)[0]
-            Vista.objects.filter(name=vista_name, user=user).exclude(pk=vista.pk).delete()
+        if user.is_authenticated:
+            try:
+                vista, created = Vista.objects.get_or_create(name=vista_name, user=user)
+            except Vista.MultipleObjectsReturned:
+                vista = Vista.objects.filter(name=vista_name, user=user)[0]
+                Vista.objects.filter(name=vista_name, user=user).exclude(pk=vista.pk).delete()
 
-        vista.name = vista_name
-        vista.user = user
-        vista.modified = datetime.date.today()
-        vista.filterstring = querydict_use.urlencode()
-        vista.model_name = queryset.model._meta.label_lower
+            vista.name = vista_name
+            vista.user = user
+            vista.modified = datetime.date.today()
+            vista.filterstring = querydict_use.urlencode()
+            vista.model_name = queryset.model._meta.label_lower
 
-        vista.save()
+            vista.save()
 
     return {'querydict': querydict_remember, 'queryset':queryset}
 
@@ -232,7 +234,7 @@ def get_latest_vista(user, queryset, defaults={}, settings={}):
         vista = Vista.objects.filter(user=user, model_name=model_name).latest('modified')
         return make_vista(user,queryset, QueryDict(vista.filterstring), {}, vista.name, settings, True)
     except Vista.DoesNotExist:
-        return default_vista( user, queryset, defaults, settings )
+        return default_vista( queryset, defaults, settings )
 
 
 # call this function in a try/except block to catch DoesNotExist.
@@ -253,17 +255,91 @@ def delete_vista(request):
     vista_name = request.POST.get('vista_name') if 'vista_name' in request.POST else ''
     vista = Vista.objects.filter(name=vista_name, user=request.user).delete()
 
-def default_vista(user, queryset, defaults={}, settings={}):
-    return make_vista(
-        user,
-        queryset,
-        defaults,
-        {},
-        '',
-        settings,
-        False
-    )
+def default_vista(queryset, defaults={}, settings={}):
 
+    def queryset_filter(queryset, querydict, indx = None):
+        fieldnamekey = 'filter__fieldname'
+        opkey = 'filter__op'
+        valuekey = 'filter__value'
+
+        if indx is not None:
+            [fieldnamekey, opkey, valuekey] = [key + '__' + str(indx) for key in [fieldnamekey, opkey, valuekey]]
+
+        if fieldnamekey in querydict and opkey in querydict:
+            filter__fieldname = querydict.get(fieldnamekey)
+            filter__op = querydict.get(opkey)
+
+            filter__value = False
+
+            if valuekey in querydict:
+                filter__value = querydict.get(valuekey)
+                filter__value = make_type(filter__fieldname, filter__value)
+
+            if filter__op in ['in', 'range']:
+                filter__value = querydict.getlist(valuekey)
+                for fidx, fval in enumerate(filter__value):
+                    filter__value[fidx] = make_type(filter__fieldname, fval)
+
+            built_query = { filter__fieldname + '__' + filter__op: filter__value }
+            try:
+                queryset = queryset.filter(**built_query)
+            except (ValueError, ValidationError) as e:
+                logger.warning('Error ', e.__class__.__name__,  e, 'for query: ', built_query)
+                queryset = queryset.model.objects.all()
+            except (FieldError, ValidationError) as e:
+                logger.warning('Error ', e.__class__.__name__,  e, 'for query: ', built_query)
+                queryset = queryset.model.objects.all()
+        return queryset
+
+
+    if 'filter__fieldname' in defaults and 'filter__op' in defaults:
+        queryset = make_vista.queryset_filter(queryset, defaults)
+
+
+    max_search_keys=10
+    if 'max_search_keys' in settings:
+        max_search_keys=settings['max_search_keys']
+
+
+    for indx in range(max_search_keys):
+        if 'filter__fieldname__' + str(indx) in defaults and 'filter__op__' + str(indx) in defaults:
+            queryset = queryset_filter(queryset, defaults, indx)
+
+    if 'combined_text_search' in defaults and defaults.get('combined_text_search') > '':
+
+        text_query = None
+        text_fields_available = [ key for key, value in settings['fields'].items() if 'available_for' in value and 'quicksearch' in value['available_for']]
+
+        if text_fields_available > []:
+            combined_text_search = defaults.get('combined_text_search')
+            combined_text_fields = text_fields_available
+            if 'combined_text_fields' in defaults and defaults.getlist('combined_text_fields'):
+                combined_text_fields = list(set(combined_text_fields).intersection(settings['text_fields_avaiable']))
+
+            for fieldname in combined_text_fields:
+                if text_query is not None:
+                    text_query = text_query | Q(**{fieldname + '__contains':combined_text_search})
+                else:
+                    text_query = Q(**{fieldname + '__contains':combined_text_search})
+
+        if text_query is not None:
+            try:
+                queryset = queryset.filter(text_query)
+            except FieldError as e:
+                logger.warning('Field Error at Combined Text Query:', e)
+                logger.info('Text query is: ' + text_query)
+
+    order_by = defaults.getlist('order_by')
+
+    try:
+        queryset = queryset.order_by(*order_by)
+    except FieldError as e:
+        logger.warning('Field Error at Order By:', e)
+
+    queryset = queryset.distinct()
+
+
+    return {'querydict': querydict_remember, 'queryset':queryset}
 
 def make_vista_fields(model, field_names=[]):
 
