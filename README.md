@@ -2,17 +2,25 @@
 
 Django app for saving sort and filter parameters
 
-Until further notice this project is in initial development and updates might break older versions
+Until further notice this project is in development and updates might break older versions
+## Requrements
+
+This app depends on touglates available at https://github.com/tougshire/touglates
 
 ## Usage
 
 In the list.html, you can include a sort/filter form with the following tag:
-```
-{% include 'tougshire_vistas/filter.html' %}
-```
-Or you can write your own
 
-The code for the view is more complex.  Below is an example of a ListView which makes use of tougshire_vistas
+```
+<script src="{% static 'touglates/touglates.js' %}">
+
+...
+
+{% include 'tougshire_vistas/filter.html' %}
+
+```
+
+The code for the view is more complex.  Below is an example of a ListView 
 
 ```
 class ItemList(ListView):
@@ -28,32 +36,23 @@ class ItemList(ListView):
         }
 
         # Define the fields that you want to be available to the view
-        # This can include related fields such as 'status__is_active'
-        # which, in this example, refers to a field named "is_active" which
-        # is part of the Status class which is related to Item by the ForeignKey "status"
-        #
+        # This can include related fields such as 'makemodel__name'
+        # which, in this example, refers to the name, which is a field
+        # of MakeModel
+        
         self.vista_settings['fields'] = make_vista_fields(Item, field_names=[
             'common_name',
-            'mmodel',
             'network_name',
             'serial_number',
-            'service_number',
+            'makemodel__name',
             'asset_number',
             'barcode',
-            'phone_number',
             'role',
-            'connected_to',
-            'essid',
             'owner',
             'assignee',
             'borrower',
-            'home',
             'location',
             'status',
-            'connected_to__mmodel',
-            'connection__mmodel',
-            'latest_inventory',
-            'status__is_active',
             'notes',
         ])
 
@@ -67,19 +66,17 @@ class ItemList(ListView):
         # Tougshire_vistas will guess at what you want, for example, TextFields are searchable but not, by default, displayed in the results
 
         self.vista_settings['fields']['notes']['available_for'].append('columns')
-        self.vista_settings['fields']['status__is_active']['label']='In Use'
+        self.vista_settings['fields']['makemodel__name']['label']='Model Name'
 
-        # Define the default view if, for example, you want users to be able to press a "default"
-        # button on an HTML form and get this view, or have a view that comes up if no other views are saved
+        # Define the default view.
         # Make sure the fields used here are also in the list of fields above
         # You can leave the trailing __0 out if you only have one fieldname / op / value set
         # but I haven't tested as much without the trailing __0 so it's probably best to leave it in
-        #
 
         self.vista_defaults = QueryDict(urlencode([
-            ('filter__fieldname__0', ['status__is_active']),
+            ('filter__fieldname__0', ['status']),
             ('filter__op__0', ['exact']),
-            ('filter__value__0', [True]),
+            ('filter__value__0', 1),
             ('order_by', ['common_name', 'serial_number',]),
             ('paginate_by',self.paginate_by),
         ],doseq=True), mutable=True )
@@ -87,10 +84,13 @@ class ItemList(ListView):
         return super().setup(request, *args, **kwargs)
 
     # Redirect POST requests
-    # In my HTML, the form that the user fills out uses POST as the method, but ListView doesn't process POST requests
+    # The filter form uses POST as the method, but ListView doesn't process POST requests so redirect post to get
     #
     def post(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+    # Call on Tougshire Vista to process and return the queryset
+    # 
 
     def get_queryset(self, **kwargs):
 
@@ -119,7 +119,8 @@ class ItemList(ListView):
 
         context_data = {**context_data, **vista_data}
 
-        context_data['vistas'] = Vista.objects.filter(user=self.request.user, model_name='libtekin.item').all() # for choosing saved vistas
+        if self.request.user.is_authenticated:
+            context_data['vistas'] = Vista.objects.filter(user=self.request.user, model_name='libtekin.item').all() # for choosing saved vistas
 
         if self.request.POST.get('vista_name'):
             context_data['vista_name'] = self.request.POST.get('vista_name')
