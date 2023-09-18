@@ -24,7 +24,7 @@ def get_vista_queryset( view ):
         querydict = QueryDict(view.request.session.get('query'))
         view.vistaobj = make_vista(
             view.request.user,
-            view.vista_obj.queryset,
+            view.vistaobj['queryset'],
             querydict,
             {},
             '',
