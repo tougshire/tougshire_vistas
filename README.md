@@ -49,8 +49,6 @@ class ItemList(ListView):
             'barcode',
             'role',
             'owner',
-            'assignee',
-            'borrower',
             'location',
             'status',
             'notes',

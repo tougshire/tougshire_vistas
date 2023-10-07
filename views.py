@@ -405,7 +405,6 @@ def make_vista_fields(model, field_names=[]):
 
         # now, if not a Rel or ForeignKey
         else:
-            print("tp239g655", model_field)
             vista_fields[field_name]["label"] = (
                 chained_label + model_field.verbose_name.title()
             )
