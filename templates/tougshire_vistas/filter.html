@@ -63,7 +63,6 @@
               </select>
             </div>
           {% elif field.options.type == 'boolean' %}
-            {% elif field.options.type == 'boolean' %}
             <div id="div_filter__{{ field.name }}__{{ forloop.parentloop.counter0 }}" class="controlset filter__value" style="display:none">
               <input type="hidden" id="ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }}" value="exact">
               <input type="checkbox" id="ctl_filter__value__{{ field.name }}__{{ forloop.parentloop.counter0 }}" {% if filterset.value %} checked="CHECKED"{% endif %}>
@@ -196,7 +195,9 @@ function showFilterField(select) {
   for(opt of select.options) {
     if(opt.value){
       /* hide all of the value and op controls */
+      document.getElementById('div_filter__op__' + opt.value + '__' + ctlNum ).style.display="none"
       document.getElementById('div_filter__' + opt.value + '__' + ctlNum ).style.display="none"
+
       /* remove the names so they don't get submitted with the form */
       document.getElementById('ctl_filter__op__' + opt.value + '__' + ctlNum ).removeAttribute('name')
       val_control = document.getElementById('ctl_filter__value__' + opt.value + '__' + ctlNum )
@@ -209,11 +210,13 @@ function showFilterField(select) {
     }
   }
   if(select.value) {
-    /*re-show and re-name the value and op controls that match what is selected */ 
+    /*re-show and re-name the value and op controls that match what is selected */
     select.classList.remove('grayedout')
     select.name="filter__fieldname__" + ctlNum
     document.getElementById('div_filter__' + select.value  + '__' + ctlNum ).style.display="block"
     document.getElementById('ctl_filter__op__' + select.value + '__' + ctlNum ).name="filter__op__" + ctlNum
+    document.getElementById('div_filter__op__' + select.value + '__' + ctlNum ).style.display="block"
+    console.log("tp23b6628", document.getElementById('ctl_filter__op__' + select.value + '__' + ctlNum ))
     val_control = document.getElementById('ctl_filter__value__' + select.value + '__' + ctlNum )
     val_control.name="filter__value__" + ctlNum
     if( val_control.dataset.siblings ) {
@@ -242,47 +245,47 @@ for( ctlNum = 0; ctlNum < max_search_keys; ctlNum++ ) {
 init_multiselect_container(document.getElementById('frm_vista'))
 </script>
 <script>
-  document.getElementById('btn_default').addEventListener('click', function(){
+  // document.getElementById('btn_default').addEventListener('click', function(){
 
-    var vista_defaults = {{ vista_default|safe }}
+  //   var vista_defaults = {{ vista_default|safe }}
 
-    for (x = 0; x < max_search_keys; x++) {
-      if( document.getElementById('ctl_filter__field__' + x) !== null ) {
-        if ('filter__fieldname__' + x in vista_defaults) {
-          fieldSelecter = document.getElementById('ctl_filter__field__' + x)
-          fieldSelecter.value = vista_defaults['filter__fieldname__' + x]
-          fieldSelecter.dispatchEvent(new Event('change'))
-          valueControl_id = 'ctl_filter__value__' + vista_defaults['filter__fieldname__' + x] + '__' + x
-          valueControl = document.getElementById(valueControl_id)
-          if (valueControl.tagName == 'SELECT' ) {              
-            opts = valueControl.options
-            for(o = 0; o < opts.length; o++) {
-              if(opts[o].value in vista_defaults['filter__value__' + x] || opts[o].value == vista_defaults['filter__value__' + x]) {
-                opts[o].setAttribute('selected', 'selected')
-              }
-            }
+  //   for (x = 0; x < max_search_keys; x++) {
+  //     if( document.getElementById('ctl_filter__field__' + x) !== null ) {
+  //       if ('filter__fieldname__' + x in vista_defaults) {
+  //         fieldSelecter = document.getElementById('ctl_filter__field__' + x)
+  //         fieldSelecter.value = vista_defaults['filter__fieldname__' + x]
+  //         fieldSelecter.dispatchEvent(new Event('change'))
+  //         valueControl_id = 'ctl_filter__value__' + vista_defaults['filter__fieldname__' + x] + '__' + x
+  //         valueControl = document.getElementById(valueControl_id)
+  //         if (valueControl.tagName == 'SELECT' ) {
+  //           opts = valueControl.options
+  //           for(o = 0; o < opts.length; o++) {
+  //             if(opts[o].value in vista_defaults['filter__value__' + x] || opts[o].value == vista_defaults['filter__value__' + x]) {
+  //               opts[o].setAttribute('selected', 'selected')
+  //             }
+  //           }
 
-            fieldSelecter.dispatchEvent(new Event('change'))
-            valueDisplay_id = 'ctl_multiselectdisplay_' + valueControl_id
-            valueDisplay = document.getElementById(valueDisplay_id)
-            valueDisplay.dispatchEvent(new Event('click'))
-          } else {
-            valueControl.value = vista_defaults['filter__value__' + x] 
-          }
-        }
+  //           fieldSelecter.dispatchEvent(new Event('change'))
+  //           valueDisplay_id = 'ctl_multiselectdisplay_' + valueControl_id
+  //           valueDisplay = document.getElementById(valueDisplay_id)
+  //           valueDisplay.dispatchEvent(new Event('click'))
+  //         } else {
+  //           valueControl.value = vista_defaults['filter__value__' + x]
+  //         }
+  //       }
 
-      }  
-      document.getElementById('frm_vista').dispatchEvent(new Event('click', {bubbles: true}))
-      }
-      if('order_by' in vista_defaults) {
-        order_bys = document.getElementsByName('order_by')
-        for (x = 0; x < order_bys.length; x++) {
-          if(vista_defaults['order_by'][x]) {
-            order_bys[x].value = vista_defaults['order_by'][x]
-          }
-        }
-      }
-    })
+  //     }
+  //     document.getElementById('frm_vista').dispatchEvent(new Event('click', {bubbles: true}))
+  //     }
+  //     if('order_by' in vista_defaults) {
+  //       order_bys = document.getElementsByName('order_by')
+  //       for (x = 0; x < order_bys.length; x++) {
+  //         if(vista_defaults['order_by'][x]) {
+  //           order_bys[x].value = vista_defaults['order_by'][x]
+  //         }
+  //       }
+  //     }
+  //   })
   </script>
   <script>
     const regex = /(\?|\&)page=\d*/i;
