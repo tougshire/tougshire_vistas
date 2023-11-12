@@ -11,6 +11,21 @@ function hide_multiselect(multiSelect) {
 		show_multiselect(textBox)
 	})
 
+    /*tp23bcc49 make the op box show multiselect on change*/
+    /*ctl_filter__op__{{ field.name }}__{{ forloop.parentloop.counter0 }} */
+    /*ctl_filter__value__{{ field.name }}__{{ forloop.parentloop.counter0 }}*/
+    let optionSelectId = multiSelect.id.replace("value","op")
+    let optionSelect = document.getElementById(optionSelectId)
+	optionSelect.dataset.multiselect=multiSelect.id
+	// optionSelect.addEventListener("click", function(e){
+	// 	/*e.preventDefault()*/
+	// 	show_multiselect(textBox)
+	// })
+	optionSelect.addEventListener("change", function(e){
+		/*e.preventDefault()*/
+		show_multiselect(textBox)
+	})
+
 
     /* Show the values of selected inputs in a text box */
     let selected_qty = 0
@@ -41,7 +56,9 @@ function show_multiselect(textBox) {
     multiSelect.style.zIndex=1
 
 	multiSelect.style.display = multiSelect.dataset.displaystyle
-    multiSelect.focus()
+    if(textBox === document.activeElement) {
+        multiSelect.focus()
+    }
 	textBox.remove()
 }
 
@@ -68,6 +85,11 @@ function init_multiselect_container(container) {
 
 	container.addEventListener("click", function(e) {
         hide_multiselects(container, e.target)
+	})
+	container.addEventListener("focusout", function(e) {
+        if(e.target.getAttribute("multiple")) {
+            hide_multiselects(container, container)
+        }
 	})
 
     hide_multiselects(container, container)
