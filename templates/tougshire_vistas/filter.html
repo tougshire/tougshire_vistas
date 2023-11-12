@@ -1,3 +1,5 @@
+{% load static %}
+<script src="{% static 'tougshire_vistas/tougshire_vistas.js' %}"></script>
 <script>
   var max_search_keys = {% if max_search_keys %}{{ max_search_keys }}{% else %}5{% endif %}
 </script>
@@ -170,6 +172,7 @@
 
   });
 
+  /* displays the advanced filter upon pressing ctrl-shift-f */
   document.addEventListener('keydown', function(e) {
     if(e.ctrlKey) {
       if(e.shiftKey) {
@@ -241,8 +244,11 @@ for( ctlNum = 0; ctlNum < max_search_keys; ctlNum++ ) {
   }
 }
 </script>
+
 <script>
 init_multiselect_container(document.getElementById('frm_vista'))
+</script>
+<script>
 </script>
 <script>
   // document.getElementById('btn_default').addEventListener('click', function(){
