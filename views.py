@@ -288,11 +288,9 @@ def retrieve_vista(user, queryset, model_name, vista_name, settings={}):
             user=user, name=vista_name, model_name=model_name
         ).latest("modified")
     except:
-        vista = Vista.objects.all()
+        vista = make_vista(user, queryset, QueryDict(), {}, vista_name, settings, True)
 
-    return make_vista(
-        user, queryset, QueryDict(vista.filterstring), vista_name, settings, True
-    )
+    return vista
 
 
 # does not return anything.  Most likely you'll want to call get_latest_vista after calling this
