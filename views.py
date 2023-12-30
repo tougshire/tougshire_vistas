@@ -66,11 +66,13 @@ def get_vista_queryset(view):
             view.vista_get_by,
             view.vista_settings,
         )
+    # def retrieve_vista(user, queryset, model_name, vista_name, settings={}):
+
     elif "retrieve_vista" in view.request.POST:
         view.vistaobj = retrieve_vista(
             view.request.user,
             view.vistaobj["queryset"],
-            "sdcpeople.person",
+            view.vistaobj["model_name"],
             view.request.POST.get("vista_name"),
             view.vista_settings,
         )
