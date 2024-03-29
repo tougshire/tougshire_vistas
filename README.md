@@ -1,5 +1,7 @@
 # tougshire_vistas
 
+This will be retired in favor of django_filters_stoex
+
 Django app for saving sort and filter parameters
 
 Until further notice this project is in development and updates might break older versions
